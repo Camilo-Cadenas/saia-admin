@@ -1,0 +1,115 @@
+package com.saia.presentation.components;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
+
+/**
+ * Campo de contraseña personalizado con bordes redondeados y soporte para toggle de visibilidad.
+ */
+public class RoundedPasswordField extends JPasswordField {
+
+    private Color borderColor = new Color(0xDDDDDD);
+    private Color focusBorderColor = new Color(0x2E7D32);
+    private int radius;
+    private boolean isFocused = false;
+
+    public RoundedPasswordField(int columns) {
+        this(columns, 12);
+    }
+
+    public RoundedPasswordField(int columns, int radius) {
+        super(columns);
+        this.radius = radius;
+
+        setOpaque(false);
+        setBorder(new EmptyBorder(10, 14, 10, 14));
+        setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        setForeground(new Color(0x333333));
+        setBackground(Color.WHITE);
+        // Carácter de echo por defecto
+        setEchoChar('\u25CF');
+
+        addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                isFocused = true;
+                repaint();
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                isFocused = false;
+                repaint();
+            }
+        });
+    }
+
+    /**
+     * Alterna entre mostrar y ocultar la contraseña.
+     */
+    public void togglePasswordVisibility() {
+        if (getEchoChar() == '\u25CF') {
+            setEchoChar((char) 0); // Mostrar texto
+        } else {
+            setEchoChar('\u25CF'); // Ocultar con puntos
+        }
+        repaint();
+    }
+
+    /**
+     * Indica si la contraseña es visible actualmente.
+     */
+    public boolean isPasswordVisible() {
+        return getEchoChar() == (char) 0;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+
+        int w = getWidth();
+        int h = getHeight();
+
+        // Fondo blanco redondeado
+        g2.setColor(Color.WHITE);
+        g2.fill(new RoundRectangle2D.Float(0, 0, w, h, radius, radius));
+
+        // Borde
+        g2.setColor(isFocused ? focusBorderColor : borderColor);
+        g2.setStroke(new BasicStroke(isFocused ? 2f : 1.5f));
+        g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, w - 1, h - 1, radius, radius));
+
+        g2.dispose();
+
+        super.paintComponent(g);
+    }
+
+    @Override
+    protected void paintBorder(Graphics g) {
+        // El borde se dibuja en paintComponent
+    }
+
+    @Override
+    public boolean isOpaque() {
+        return false;
+    }
+
+    public void setBorderColor(Color color) {
+        this.borderColor = color;
+        repaint();
+    }
+
+    public void setFocusBorderColor(Color color) {
+        this.focusBorderColor = color;
+        repaint();
+    }
+
+    public void setFieldRadius(int radius) {
+        this.radius = radius;
+        repaint();
+    }
+}
