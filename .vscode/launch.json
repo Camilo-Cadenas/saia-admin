@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "request": "launch",
+            "name": "SAIA - Ejecutar",
+            "mainClass": "com.saia.Main",
+            "projectName": "saia-admin",
+            "vmArgs": "-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8",
+            "classPaths": ["${command:java.project.getClasspathVariables}"],
+            "console": "internalConsole",
+            "shortenCommandLine": "jarmanifest"
+        }
+    ]
+}

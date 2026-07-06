@@ -1,0 +1,30 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "maven.executable.path": "",
+    "java.project.referencedLibraries": [],
+    "java.configuration.maven.userSettings": "",
+    "editor.formatOnSave": false,
+    "java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-25.0.3",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "C:\\Program Files\\Java\\jdk-25.0.3",
+            "default": true
+        }
+    ],
+    "files.exclude": {
+        "**/mysql-connector*/**": true,
+        "**/.mvn/wrapper/maven-wrapper.jar": false
+    },
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/.metadata/**",
+        "**/archetype-resources/**",
+        "**/META-INF/maven/**",
+        "**/mysql-connector*/**"
+    ],
+    "maven.excludedFolders": [
+        "**/mysql-connector*"
+    ]
+}
