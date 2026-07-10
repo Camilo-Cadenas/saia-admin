@@ -34,7 +34,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SwingConstants;
@@ -101,12 +100,10 @@ public class ReportesPanel extends JPanel {
     }
 
     private void buildUI() {
-        JTabbedPane tabs = new JTabbedPane();
-        tabs.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tabs.setBackground(BG_PAGE);
-        tabs.addTab("📋  Reportes por Guarda",              buildTabReportes());
-        tabs.addTab("📊  Estadísticas de Ingresos/Salidas", buildTabEstadisticas());
-        add(tabs, BorderLayout.CENTER);
+        // Solo pestaña de Reportes — Estadísticas movidas a panel de Auditoría
+        JPanel tabReportes = buildTabReportes();
+        tabReportes.setBorder(new EmptyBorder(14, 0, 0, 0));
+        add(tabReportes, BorderLayout.CENTER);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

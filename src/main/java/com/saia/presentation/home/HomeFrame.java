@@ -66,6 +66,7 @@ public class HomeFrame extends JFrame {
     private static final String PAGE_APRENDICES  = "APRENDICES";
     private static final String PAGE_BLOQUEO     = "BLOQUEO";
     private static final String PAGE_REPORTES    = "REPORTES";
+    private static final String PAGE_ESTADISTICAS= "ESTADISTICAS";
 
     private final CardLayout  cardLayout  = new CardLayout();
     private final JPanel      contentArea = new JPanel(cardLayout);
@@ -76,6 +77,7 @@ public class HomeFrame extends JFrame {
     private AprendicesPanel        aprendicesPanel;
     private BloqueoPanel           bloqueoPanel;
     private ReportesPanel          reportesPanel;
+    private EstadisticasPanel      estadisticasPanel;
 
     // Sidebar buttons (para manejar el estado activo)
     private SidebarButton btnInicio;
@@ -331,6 +333,11 @@ public class HomeFrame extends JFrame {
         btnAuditoria.addActionListener(e -> showComingSoon("Historial de Auditoría"));
         sidebar.add(btnAuditoria);
 
+        // Estadísticas de Ingresos/Salidas bajo Auditoría
+        SidebarButton btnEstad = navBtn("\uD83D\uDCCA  Estadísticas Ingr./Salidas");
+        btnEstad.addActionListener(e -> navigate(PAGE_ESTADISTICAS));
+        sidebar.add(btnEstad);
+
         // ── CONFIGURACIÓN ────────────────────────────────────────────────────
         sidebar.add(Box.createVerticalStrut(8));
         sidebar.add(sectionLabel("CONFIGURACIÓN"));
@@ -461,6 +468,12 @@ public class HomeFrame extends JFrame {
                     contentArea.add(reportesPanel, PAGE_REPORTES);
                 }
             }
+            case PAGE_ESTADISTICAS -> {
+                if (estadisticasPanel == null) {
+                    estadisticasPanel = new EstadisticasPanel();
+                    contentArea.add(estadisticasPanel, PAGE_ESTADISTICAS);
+                }
+            }
         }
 
         cardLayout.show(contentArea, page);
@@ -480,11 +493,12 @@ public class HomeFrame extends JFrame {
             if (b != null) b.setActive(false);
         }
         switch (page) {
-            case PAGE_INICIO      -> { if (btnInicio      != null) btnInicio.setActive(true); }
-            case PAGE_PERSONAL    -> { if (btnPersonal    != null) btnPersonal.setActive(true); }
-            case PAGE_APRENDICES  -> { if (btnAprendices  != null) btnAprendices.setActive(true); }
-            case PAGE_BLOQUEO     -> { if (btnBloqueo     != null) btnBloqueo.setActive(true); }
-            case PAGE_REPORTES    -> { if (btnReportes    != null) btnReportes.setActive(true); }
+            case PAGE_INICIO       -> { if (btnInicio      != null) btnInicio.setActive(true); }
+            case PAGE_PERSONAL     -> { if (btnPersonal    != null) btnPersonal.setActive(true); }
+            case PAGE_APRENDICES   -> { if (btnAprendices  != null) btnAprendices.setActive(true); }
+            case PAGE_BLOQUEO      -> { if (btnBloqueo     != null) btnBloqueo.setActive(true); }
+            case PAGE_REPORTES     -> { if (btnReportes    != null) btnReportes.setActive(true); }
+            case PAGE_ESTADISTICAS -> { if (btnAuditoria   != null) btnAuditoria.setActive(true); }
         }
     }
 
@@ -497,12 +511,13 @@ public class HomeFrame extends JFrame {
         for (Component comp : c.getComponents()) {
             if (comp instanceof JLabel lbl && "pageLabel".equals(lbl.getName())) {
                 switch (page) {
-                    case PAGE_INICIO      -> lbl.setText("Inicio");
-                    case PAGE_PERSONAL    -> lbl.setText("Personal de Seguridad");
-                    case PAGE_APRENDICES  -> lbl.setText("Aprendices");
-                    case PAGE_BLOQUEO     -> lbl.setText("Bloqueo de Usuarios");
-                    case PAGE_REPORTES    -> lbl.setText("Gestión de Reportes");
-                    default               -> lbl.setText(page);
+                    case PAGE_INICIO       -> lbl.setText("Inicio");
+                    case PAGE_PERSONAL     -> lbl.setText("Personal de Seguridad");
+                    case PAGE_APRENDICES   -> lbl.setText("Aprendices");
+                    case PAGE_BLOQUEO      -> lbl.setText("Bloqueo de Usuarios");
+                    case PAGE_REPORTES     -> lbl.setText("Gestión de Reportes");
+                    case PAGE_ESTADISTICAS -> lbl.setText("Estadísticas de Ingresos/Salidas");
+                    default                -> lbl.setText(page);
                 }
                 return;
             }
