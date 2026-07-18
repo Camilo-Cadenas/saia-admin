@@ -144,7 +144,7 @@ abstract class BaseFormPanel extends JPanel {
     protected JPanel buildGuardaCard() {
         JPanel card = formCard();
         card.setLayout(new BorderLayout());
-        card.add(sectionTitle("\uD83D\uDEE1  DATOS DEL PERSONAL DE SEGURIDAD"), BorderLayout.NORTH);
+        card.add(sectionTitle("\uD83D\uDEE1  DATOS DEL GUARDA"), BorderLayout.NORTH);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);

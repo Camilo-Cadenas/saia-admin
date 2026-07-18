@@ -5,6 +5,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,7 @@ public class PersonalSeguridadDAO {
 
     private static final String SQL_BASE =
             "SELECT ps.id_guarda, ps.num_doc, ps.turno, ps.empresa_seg, " +
+            "       ps.inicio_turno, ps.finalizacion_turno, " +
             "       p.tip_doc, p.nombres, p.p_ape, p.s_ape, p.tel, " +
             "       p.tip_sang, p.genero, p.fecha_nac, p.email, " +
             "       COALESCE(c.estado, TRUE) AS cuenta_activa " +
@@ -161,6 +163,12 @@ public class PersonalSeguridadDAO {
         g.setNumDoc    (rs.getInt   ("num_doc"));
         g.setTurno     (rs.getString("turno"));
         g.setEmpresaSeg(rs.getString("empresa_seg"));
+
+        Timestamp ini = rs.getTimestamp("inicio_turno");
+        if (ini != null) g.setInicioTurno(ini.toLocalDateTime());
+        Timestamp fin = rs.getTimestamp("finalizacion_turno");
+        if (fin != null) g.setFinalizacionTurno(fin.toLocalDateTime());
+
         g.setPersona   (p);
         g.setCuentaActiva(rs.getBoolean("cuenta_activa"));
         return g;

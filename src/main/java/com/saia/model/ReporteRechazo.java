@@ -4,33 +4,35 @@ import java.time.LocalDateTime;
 
 /**
  * Entidad que representa la tabla {@code reporte_rechazo}.
+ * BD nueva: usa num_doc directamente (no id_aprendiz).
  */
 public class ReporteRechazo {
 
     private int idReporte;
-    private int idAprendiz;
-    private long numDoc;              // num_doc FK → persona
+    private long numDoc;           // num_doc FK → persona (aprendiz)
     private int idGuarda;
-    private String motivo;            // VARCHAR(255)
-    private String descripcion;       // TEXT
+    private String motivo;
+    private String descripcion;
     private LocalDateTime fechaReporte;
 
-    /** Aprendiz y guardia asociados */
+    /** Objetos asociados opcionales */
     private Aprendiz          aprendiz;
     private PersonalSeguridad guarda;
 
     public ReporteRechazo() {}
 
-    // ---- Getters y Setters ----
-
     public int getIdReporte() { return idReporte; }
     public void setIdReporte(int idReporte) { this.idReporte = idReporte; }
 
-    public int getIdAprendiz() { return idAprendiz; }
-    public void setIdAprendiz(int idAprendiz) { this.idAprendiz = idAprendiz; }
-
     public long getNumDoc() { return numDoc; }
     public void setNumDoc(long numDoc) { this.numDoc = numDoc; }
+
+    /** @deprecated La BD nueva no tiene id_aprendiz. Usar getNumDoc(). */
+    @Deprecated
+    public int getIdAprendiz() { return (int) numDoc; }
+    /** @deprecated Usar setNumDoc() */
+    @Deprecated
+    public void setIdAprendiz(int idAprendiz) { this.numDoc = idAprendiz; }
 
     public int getIdGuarda() { return idGuarda; }
     public void setIdGuarda(int idGuarda) { this.idGuarda = idGuarda; }
@@ -52,7 +54,6 @@ public class ReporteRechazo {
 
     @Override
     public String toString() {
-        return "ReporteRechazo{idReporte=" + idReporte
-                + ", idAprendiz=" + idAprendiz + "}";
+        return "ReporteRechazo{idReporte=" + idReporte + ", numDoc=" + numDoc + "}";
     }
 }

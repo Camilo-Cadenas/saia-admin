@@ -1,17 +1,21 @@
 package com.saia.model;
 
+import java.time.LocalDateTime;
+
 /**
  * Entidad que representa la tabla {@code personal_seguridad}.
  * num_doc → INT (nueva BD).
  */
 public class PersonalSeguridad {
 
-    private int    idGuarda;
-    private int    numDoc;
-    private String turno;
-    private String empresaSeg;
-    private Persona persona;
-    private boolean cuentaActiva = true; // estado leído de tabla cuenta
+    private int           idGuarda;
+    private int           numDoc;
+    private String        turno;
+    private String        empresaSeg;
+    private LocalDateTime inicioTurno;
+    private LocalDateTime finalizacionTurno;
+    private Persona       persona;
+    private boolean       cuentaActiva = true; // estado leído de tabla cuenta
 
     public PersonalSeguridad() {}
 
@@ -26,6 +30,12 @@ public class PersonalSeguridad {
 
     public String getEmpresaSeg() { return empresaSeg; }
     public void setEmpresaSeg(String empresaSeg) { this.empresaSeg = empresaSeg; }
+
+    public LocalDateTime getInicioTurno() { return inicioTurno; }
+    public void setInicioTurno(LocalDateTime inicioTurno) { this.inicioTurno = inicioTurno; }
+
+    public LocalDateTime getFinalizacionTurno() { return finalizacionTurno; }
+    public void setFinalizacionTurno(LocalDateTime finalizacionTurno) { this.finalizacionTurno = finalizacionTurno; }
 
     public Persona getPersona() { return persona; }
     public void setPersona(Persona persona) { this.persona = persona; }

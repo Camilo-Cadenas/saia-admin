@@ -69,7 +69,7 @@ public class BloqueoPanel extends JPanel {
     };
 
     private static final String FILTRO_TODOS     = "Todos";
-    private static final String FILTRO_PERSONAL  = "Personal de Seguridad";
+    private static final String FILTRO_PERSONAL  = "Guarda";
     private static final String FILTRO_APRENDIZ  = "Aprendiz";
 
     private final BloqueoService    service    = new BloqueoService();

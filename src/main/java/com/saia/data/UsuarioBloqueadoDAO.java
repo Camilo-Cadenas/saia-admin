@@ -61,7 +61,7 @@ public class UsuarioBloqueadoDAO {
             "INNER JOIN persona p ON c.num_doc = p.num_doc " +
             "INNER JOIN rol     r ON c.id_rol  = r.id_rol " +
             "WHERE c.estado = FALSE " +
-            "  AND r.nom_rol IN ('Personal de Seguridad', 'Aprendiz') " +
+            "  AND r.nom_rol IN ('Guarda', 'Aprendiz') " +
             "ORDER BY r.nom_rol, p.p_ape, p.nombres";
 
     /**

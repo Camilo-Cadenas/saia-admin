@@ -19,12 +19,12 @@ import com.saia.model.Rol;
  *
  * Cambios BD nueva:
  *  - num_doc es INT
- *  - Agrega columnas mail y password_hash
+ *  - Agrega columnas mail y password (antes password_hash)
  */
 public class CuentaDAO {
 
     private static final String SQL_BASE =
-            "SELECT c.id_cuenta, c.id_rol, c.num_doc, c.mail, c.password_hash, " +
+            "SELECT c.id_cuenta, c.id_rol, c.num_doc, c.mail, c.password, " +
             "       c.estado, c.fecha_creacion, r.nom_rol, " +
             "       p.nombres, p.p_ape, p.s_ape, p.email " +
             "FROM cuenta c " +
@@ -45,14 +45,14 @@ public class CuentaDAO {
 
     // Inserción con estado explícito
     private static final String SQL_INSERT =
-            "INSERT INTO cuenta (id_rol, num_doc, mail, password_hash, estado) " +
+            "INSERT INTO cuenta (id_rol, num_doc, mail, password, estado) " +
             "VALUES (?, ?, ?, ?, ?)";
 
     private static final String SQL_UPDATE_ESTADO =
             "UPDATE cuenta SET estado = ? WHERE num_doc = ?";
 
     private static final String SQL_UPDATE_PASSWORD =
-            "UPDATE cuenta SET password_hash = ? WHERE num_doc = ?";
+            "UPDATE cuenta SET password = ? WHERE num_doc = ?";
 
     private static final String SQL_EXISTS =
             "SELECT COUNT(*) FROM cuenta WHERE num_doc = ?";
@@ -186,7 +186,7 @@ public class CuentaDAO {
         c.setIdRol       (rs.getInt    ("id_rol"));
         c.setNumDoc      (rs.getInt    ("num_doc"));
         c.setMail        (rs.getString ("mail"));
-        c.setPasswordHash(rs.getString ("password_hash"));
+        c.setPasswordHash(rs.getString ("password"));
         c.setEstado      (rs.getBoolean("estado"));
 
         Timestamp ts = rs.getTimestamp("fecha_creacion");

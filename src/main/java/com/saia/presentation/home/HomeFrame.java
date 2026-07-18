@@ -67,6 +67,8 @@ public class HomeFrame extends JFrame {
     private static final String PAGE_BLOQUEO     = "BLOQUEO";
     private static final String PAGE_REPORTES    = "REPORTES";
     private static final String PAGE_ESTADISTICAS= "ESTADISTICAS";
+    private static final String PAGE_DESCARGA    = "DESCARGA";
+    private static final String PAGE_AUDITORIA   = "AUDITORIA";
 
     private final CardLayout  cardLayout  = new CardLayout();
     private final JPanel      contentArea = new JPanel(cardLayout);
@@ -78,6 +80,8 @@ public class HomeFrame extends JFrame {
     private BloqueoPanel           bloqueoPanel;
     private ReportesPanel          reportesPanel;
     private EstadisticasPanel      estadisticasPanel;
+    private DescargaReportesPanel  descargaPanel;
+    private HistorialAuditoriaPanel auditoriaPanel;
 
     // Sidebar buttons (para manejar el estado activo)
     private SidebarButton btnInicio;
@@ -87,8 +91,8 @@ public class HomeFrame extends JFrame {
     private SidebarButton btnReportes;
     private SidebarButton btnDescargar;
     private SidebarButton btnAuditoria;
+    private SidebarButton btnEstadisticas;
     private SidebarButton btnConfig;
-
     private final AuthService authService = new AuthService();
 
     // ── Constructor ───────────────────────────────────────────────────────────
@@ -321,7 +325,7 @@ public class HomeFrame extends JFrame {
         sidebar.add(btnReportes);
 
         btnDescargar = navBtn("\u2B07  Descargar Reportes");
-        btnDescargar.addActionListener(e -> showComingSoon("Descargar Reportes"));
+        btnDescargar.addActionListener(e -> navigate(PAGE_DESCARGA));
         sidebar.add(btnDescargar);
 
         // ── AUDITORÍA ────────────────────────────────────────────────────────
@@ -330,13 +334,13 @@ public class HomeFrame extends JFrame {
         sidebar.add(Box.createVerticalStrut(2));
 
         btnAuditoria = navBtn("\uD83D\uDDD3  Historial de Auditoría");
-        btnAuditoria.addActionListener(e -> showComingSoon("Historial de Auditoría"));
+        btnAuditoria.addActionListener(e -> navigate(PAGE_AUDITORIA));
         sidebar.add(btnAuditoria);
 
         // Estadísticas de Ingresos/Salidas bajo Auditoría
-        SidebarButton btnEstad = navBtn("\uD83D\uDCCA  Estadísticas Ingr./Salidas");
-        btnEstad.addActionListener(e -> navigate(PAGE_ESTADISTICAS));
-        sidebar.add(btnEstad);
+        btnEstadisticas = navBtn("\uD83D\uDCCA  Estadísticas Ingr./Salidas");
+        btnEstadisticas.addActionListener(e -> navigate(PAGE_ESTADISTICAS));
+        sidebar.add(btnEstadisticas);
 
         // ── CONFIGURACIÓN ────────────────────────────────────────────────────
         sidebar.add(Box.createVerticalStrut(8));
@@ -474,6 +478,18 @@ public class HomeFrame extends JFrame {
                     contentArea.add(estadisticasPanel, PAGE_ESTADISTICAS);
                 }
             }
+            case PAGE_DESCARGA -> {
+                if (descargaPanel == null) {
+                    descargaPanel = new DescargaReportesPanel();
+                    contentArea.add(descargaPanel, PAGE_DESCARGA);
+                }
+            }
+            case PAGE_AUDITORIA -> {
+                if (auditoriaPanel == null) {
+                    auditoriaPanel = new HistorialAuditoriaPanel();
+                    contentArea.add(auditoriaPanel, PAGE_AUDITORIA);
+                }
+            }
         }
 
         cardLayout.show(contentArea, page);
@@ -488,17 +504,20 @@ public class HomeFrame extends JFrame {
 
     private void updateActiveButton(String page) {
         SidebarButton[] all = {btnInicio, btnPersonal, btnAprendices,
-                btnBloqueo, btnReportes, btnDescargar, btnAuditoria, btnConfig};
+                btnBloqueo, btnReportes, btnDescargar, btnAuditoria,
+                btnEstadisticas, btnConfig};
         for (SidebarButton b : all) {
             if (b != null) b.setActive(false);
         }
         switch (page) {
-            case PAGE_INICIO       -> { if (btnInicio      != null) btnInicio.setActive(true); }
-            case PAGE_PERSONAL     -> { if (btnPersonal    != null) btnPersonal.setActive(true); }
-            case PAGE_APRENDICES   -> { if (btnAprendices  != null) btnAprendices.setActive(true); }
-            case PAGE_BLOQUEO      -> { if (btnBloqueo     != null) btnBloqueo.setActive(true); }
-            case PAGE_REPORTES     -> { if (btnReportes    != null) btnReportes.setActive(true); }
-            case PAGE_ESTADISTICAS -> { if (btnAuditoria   != null) btnAuditoria.setActive(true); }
+            case PAGE_INICIO       -> { if (btnInicio        != null) btnInicio.setActive(true); }
+            case PAGE_PERSONAL     -> { if (btnPersonal      != null) btnPersonal.setActive(true); }
+            case PAGE_APRENDICES   -> { if (btnAprendices    != null) btnAprendices.setActive(true); }
+            case PAGE_BLOQUEO      -> { if (btnBloqueo       != null) btnBloqueo.setActive(true); }
+            case PAGE_REPORTES     -> { if (btnReportes      != null) btnReportes.setActive(true); }
+            case PAGE_DESCARGA     -> { if (btnDescargar     != null) btnDescargar.setActive(true); }
+            case PAGE_ESTADISTICAS -> { if (btnEstadisticas  != null) btnEstadisticas.setActive(true); }
+            case PAGE_AUDITORIA    -> { if (btnAuditoria     != null) btnAuditoria.setActive(true); }
         }
     }
 
@@ -517,6 +536,8 @@ public class HomeFrame extends JFrame {
                     case PAGE_BLOQUEO      -> lbl.setText("Bloqueo de Usuarios");
                     case PAGE_REPORTES     -> lbl.setText("Gestión de Reportes");
                     case PAGE_ESTADISTICAS -> lbl.setText("Estadísticas de Ingresos/Salidas");
+                    case PAGE_DESCARGA     -> lbl.setText("Descarga de Reportes");
+                    case PAGE_AUDITORIA    -> lbl.setText("Historial de Auditoría");
                     default                -> lbl.setText(page);
                 }
                 return;

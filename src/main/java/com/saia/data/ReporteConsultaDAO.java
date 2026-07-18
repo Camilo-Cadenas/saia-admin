@@ -111,7 +111,7 @@ public class ReporteConsultaDAO {
     }
 
     public int countAprendicesReportados(LocalDate desde, LocalDate hasta) {
-        String sql = "SELECT COUNT(DISTINCT id_aprendiz) FROM reporte_rechazo " +
+        String sql = "SELECT COUNT(DISTINCT num_doc) FROM reporte_rechazo " +
                      "WHERE fecha_reporte BETWEEN ? AND ?";
         try (Connection cn = ConnectionPool.getInstance().getConnection();
              PreparedStatement ps = cn.prepareStatement(sql)) {
@@ -128,14 +128,13 @@ public class ReporteConsultaDAO {
         "SELECT rr.id_reporte, " +
         "       pg.tip_doc  AS tip_doc_g, ps.num_doc AS num_doc_g, " +
         "       CONCAT(pg.nombres,' ',pg.p_ape) AS nombre_guarda, " +
-        "       pa.tip_doc  AS tip_doc_a, a.num_doc AS num_doc_a, " +
+        "       pa.tip_doc  AS tip_doc_a, rr.num_doc AS num_doc_a, " +
         "       CONCAT(pa.nombres,' ',pa.p_ape) AS nombre_aprendiz, " +
         "       rr.motivo, rr.descripcion, rr.fecha_reporte " +
         "FROM reporte_rechazo rr " +
-        "INNER JOIN personal_seguridad ps ON rr.id_guarda   = ps.id_guarda " +
-        "INNER JOIN persona             pg ON ps.num_doc     = pg.num_doc " +
-        "INNER JOIN aprendiz            a  ON rr.id_aprendiz = a.id_aprendiz " +
-        "INNER JOIN persona             pa ON a.num_doc      = pa.num_doc " +
+        "INNER JOIN personal_seguridad ps ON rr.id_guarda = ps.id_guarda " +
+        "INNER JOIN persona             pg ON ps.num_doc   = pg.num_doc " +
+        "INNER JOIN persona             pa ON rr.num_doc   = pa.num_doc " +
         "WHERE rr.fecha_reporte BETWEEN ? AND ? ";
 
     /**
@@ -143,14 +142,14 @@ public class ReporteConsultaDAO {
      * @param desde inicio del rango (inclusive)
      * @param hasta fin del rango (inclusive, se agrega 1 día)
      * @param idGuarda  -1 = todos
-     * @param idAprendiz -1 = todos
+     * @param numDocAprendiz -1 = todos
      */
     public List<FilaReporte> findReportes(LocalDate desde, LocalDate hasta,
-                                          int idGuarda, int idAprendiz) {
+                                          int idGuarda, int numDocAprendiz) {
         List<FilaReporte> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(SQL_REPORTES);
-        if (idGuarda   > 0) sql.append(" AND rr.id_guarda   = ").append(idGuarda);
-        if (idAprendiz > 0) sql.append(" AND rr.id_aprendiz = ").append(idAprendiz);
+        if (idGuarda        > 0) sql.append(" AND rr.id_guarda = ").append(idGuarda);
+        if (numDocAprendiz  > 0) sql.append(" AND rr.num_doc   = ").append(numDocAprendiz);
         sql.append(" ORDER BY rr.fecha_reporte DESC");
 
         try (Connection cn = ConnectionPool.getInstance().getConnection();

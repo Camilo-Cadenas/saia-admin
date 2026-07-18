@@ -23,8 +23,8 @@ import com.saia.util.SessionManager;
  */
 public class PersonalSeguridadService {
 
-    /** id_rol = 2 para Personal de Seguridad (definido en la BD) */
-    private static final int ID_ROL_PERSONAL = 2;
+    /** id_rol = 3 para Guarda (antes Personal de Seguridad) */
+    private static final int ID_ROL_PERSONAL = 3;
 
     public enum RegistroResult {
         OK,
