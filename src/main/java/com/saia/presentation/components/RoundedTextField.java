@@ -1,9 +1,16 @@
 package com.saia.presentation.components;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
+
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Campo de texto personalizado con bordes redondeados y soporte para texto placeholder.
@@ -11,8 +18,8 @@ import java.awt.geom.RoundRectangle2D;
 public class RoundedTextField extends JTextField {
 
     private String placeholder;
-    private Color borderColor = new Color(0xDDDDDD);
-    private Color focusBorderColor = new Color(0x2E7D32);
+    private Color borderColor = com.saia.presentation.UITheme.BORDER;
+    private Color focusBorderColor = com.saia.presentation.UITheme.PRIMARY;
     private Color placeholderColor = new Color(0xAAAAAA);
     private int radius;
     private boolean isFocused = false;
@@ -28,9 +35,14 @@ public class RoundedTextField extends JTextField {
 
         setOpaque(false);
         setBorder(new EmptyBorder(10, 14, 10, 14));
-        setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        setForeground(new Color(0x333333));
+        setFont(com.saia.presentation.UITheme.FONT_BODY);
+        setForeground(com.saia.presentation.UITheme.TEXT_PRIMARY);
         setBackground(Color.WHITE);
+
+        // Color del caret
+        setCaretColor(com.saia.presentation.UITheme.PRIMARY);
+        setSelectedTextColor(Color.WHITE);
+        setSelectionColor(com.saia.presentation.UITheme.PRIMARY);
 
         addFocusListener(new java.awt.event.FocusAdapter() {
             @Override

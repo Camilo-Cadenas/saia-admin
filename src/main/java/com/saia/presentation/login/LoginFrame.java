@@ -35,6 +35,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.saia.business.AuthService;
 import com.saia.business.AuthService.AuthResult;
+import com.saia.presentation.UITheme;
 import com.saia.presentation.components.RoundedButton;
 import com.saia.presentation.components.RoundedPasswordField;
 import com.saia.presentation.components.RoundedTextField;
@@ -45,14 +46,14 @@ import com.saia.presentation.components.RoundedTextField;
  */
 public class LoginFrame extends JFrame {
 
-    // Colores corporativos
-    private static final Color COLOR_GREEN_DARK  = new Color(0x1A5C23);
-    private static final Color COLOR_GREEN_MID   = new Color(0x2E7D32);
-    private static final Color COLOR_GREEN_LIGHT = new Color(0x4CAF50);
-    private static final Color COLOR_GREEN_PALE  = new Color(0xE8F5E9);
-    private static final Color COLOR_GRAY_TEXT   = new Color(0x666666);
-    private static final Color COLOR_BORDER      = new Color(0xDDDDDD);
-    private static final Color COLOR_WHITE       = Color.WHITE;
+    // Colores corporativos — ahora referenciados desde UITheme
+    private static final Color COLOR_GREEN_DARK  = UITheme.TOPBAR_START;
+    private static final Color COLOR_GREEN_MID   = UITheme.PRIMARY;
+    private static final Color COLOR_GREEN_LIGHT = UITheme.SECONDARY;
+    private static final Color COLOR_GREEN_PALE  = UITheme.PRIMARY_PALE;
+    private static final Color COLOR_GRAY_TEXT   = UITheme.TEXT_SECONDARY;
+    private static final Color COLOR_BORDER      = UITheme.BORDER;
+    private static final Color COLOR_WHITE       = UITheme.BG_WHITE;
 
     private final AuthService authService = new AuthService();
 
@@ -274,16 +275,16 @@ public class LoginFrame extends JFrame {
 
         // Título
         JLabel titleLabel = new JLabel("Acceso Administrador", SwingConstants.CENTER);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titleLabel.setForeground(new Color(0x1A1A1A));
+        titleLabel.setFont(UITheme.FONT_PAGE_TITLE);
+        titleLabel.setForeground(UITheme.TEXT_PRIMARY);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         form.add(titleLabel);
         form.add(Box.createVerticalStrut(6));
 
         // Subtítulo
         JLabel subtitleLabel = new JLabel("Ingresa tus credenciales para continuar", SwingConstants.CENTER);
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subtitleLabel.setForeground(COLOR_GRAY_TEXT);
+        subtitleLabel.setFont(UITheme.FONT_BODY);
+        subtitleLabel.setForeground(UITheme.TEXT_SECONDARY);
         subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         form.add(subtitleLabel);
         form.add(Box.createVerticalStrut(28));
@@ -363,8 +364,8 @@ public class LoginFrame extends JFrame {
 
     private JLabel buildFieldLabel(String text) {
         JLabel lbl = new JLabel(text);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setForeground(new Color(0x333333));
+        lbl.setFont(UITheme.FONT_LABEL);
+        lbl.setForeground(UITheme.TEXT_PRIMARY);
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         return lbl;
     }
@@ -486,14 +487,14 @@ public class LoginFrame extends JFrame {
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 
         rememberMeCheck = new JCheckBox("Recordarme");
-        rememberMeCheck.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        rememberMeCheck.setForeground(new Color(0x444444));
+        rememberMeCheck.setFont(UITheme.FONT_BODY);
+        rememberMeCheck.setForeground(UITheme.TEXT_PRIMARY);
         rememberMeCheck.setOpaque(false);
         rememberMeCheck.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JLabel forgotLabel = new JLabel("\u00BFOlvidaste tu contraseña?");
-        forgotLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        forgotLabel.setForeground(COLOR_GREEN_MID);
+        forgotLabel.setFont(UITheme.FONT_BODY);
+        forgotLabel.setForeground(UITheme.PRIMARY);
         forgotLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         forgotLabel.addMouseListener(new MouseAdapter() {
             @Override
@@ -505,11 +506,11 @@ public class LoginFrame extends JFrame {
             }
             @Override
             public void mouseEntered(MouseEvent e) {
-                forgotLabel.setForeground(COLOR_GREEN_DARK);
+                forgotLabel.setForeground(UITheme.PRIMARY_DARK);
             }
             @Override
             public void mouseExited(MouseEvent e) {
-                forgotLabel.setForeground(COLOR_GREEN_MID);
+                forgotLabel.setForeground(UITheme.PRIMARY);
             }
         });
 
@@ -520,8 +521,9 @@ public class LoginFrame extends JFrame {
 
     private RoundedButton buildLoginButton() {
         RoundedButton btn = new RoundedButton("\uD83D\uDD12  Iniciar sesión",
-                COLOR_GREEN_MID, new Color(0x1B5E20), new Color(0x145218), COLOR_WHITE, 28);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 15));
+                UITheme.PRIMARY, UITheme.PRIMARY_DARK,
+                UITheme.SECONDARY_DARK, Color.WHITE, 28);
+        btn.setFont(UITheme.FONT_SECTION);
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         btn.setPreferredSize(new Dimension(360, 50));

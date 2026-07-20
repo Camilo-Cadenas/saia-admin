@@ -14,18 +14,20 @@ import java.util.Map;
 
 import javax.swing.JPanel;
 
+import com.saia.presentation.UITheme;
+
 /**
  * Componente gráfico de dona (donut chart) dibujado con Java2D.
- * Recibe un mapa de {etiqueta → valor} y renderiza los segmentos.
+ * Paleta alineada con identidad SENA / UITheme.
  */
 public class DonutChart extends JPanel {
 
     private static final Color[] PALETTE = {
-        new Color(0x2E7D32),   // verde
-        new Color(0xFF8C00),   // naranja
-        new Color(0xC62828),   // rojo
-        new Color(0x1565C0),   // azul
-        new Color(0x6A1B9A)    // morado
+        UITheme.PRIMARY,          // verde SENA
+        UITheme.ACCENT,           // naranja SENA
+        UITheme.SECONDARY,        // verde complementario
+        new Color(0xC62828),      // rojo
+        new Color(0x1565C0)       // azul
     };
 
     private Map<String, Integer> data = new LinkedHashMap<>();
@@ -85,8 +87,7 @@ public class DonutChart extends JPanel {
         int cy = getHeight() / 2;
 
         g2.setColor(new Color(0x1A1A1A));
-        g2.setFont(new Font("Segoe UI", Font.BOLD, size / 6));
-        FontMetrics fm = g2.getFontMetrics();
+        g2.setFont(new Font("Segoe UI", Font.BOLD, size / 6));        FontMetrics fm = g2.getFontMetrics();
         String totalStr = String.valueOf(total);
         g2.drawString(totalStr,
                 cx - fm.stringWidth(totalStr) / 2,

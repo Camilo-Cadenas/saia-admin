@@ -2,7 +2,6 @@ package com.saia.presentation.components;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -28,7 +27,11 @@ public class RoundedButton extends JButton {
     private boolean isPressed = false;
 
     public RoundedButton(String text) {
-        this(text, new Color(0x2E7D32), new Color(0x1B5E20), new Color(0x145218), Color.WHITE, 30);
+        this(text,
+            com.saia.presentation.UITheme.PRIMARY,
+            com.saia.presentation.UITheme.PRIMARY_DARK,
+            com.saia.presentation.UITheme.SECONDARY_DARK,
+            Color.WHITE, 30);
     }
 
     public RoundedButton(String text, Color backgroundColor, Color hoverColor,
@@ -46,7 +49,7 @@ public class RoundedButton extends JButton {
         setFocusPainted(false);
         setForeground(foregroundColor);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        setFont(new Font("Segoe UI", Font.BOLD, 14));
+        setFont(com.saia.presentation.UITheme.FONT_LABEL);
 
         addMouseListener(new MouseAdapter() {
             @Override

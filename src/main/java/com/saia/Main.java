@@ -32,6 +32,9 @@ public class Main {
             System.err.println("[Main] Look & Feel no disponible: " + e.getMessage());
         }
 
+        // Aplicar tema SAIA (colores, fuentes, borders globales)
+        com.saia.presentation.UITheme.applyGlobal();
+
         // 2. Verificar conectividad con la BD antes de mostrar la UI
         if (!checkDatabaseConnection()) {
             JOptionPane.showMessageDialog(null,

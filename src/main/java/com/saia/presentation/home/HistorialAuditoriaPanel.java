@@ -57,6 +57,7 @@ import com.saia.business.AuditoriaService;
 import com.saia.business.AuditoriaService.PaginaAuditoria;
 import com.saia.model.RegistroAuditoria;
 import com.saia.model.RegistroAuditoria.Accion;
+import com.saia.presentation.UITheme;
 
 /**
  * Panel "Historial de Auditoría".
@@ -64,15 +65,15 @@ import com.saia.model.RegistroAuditoria.Accion;
  */
 public class HistorialAuditoriaPanel extends JPanel {
 
-    // ── Paleta ────────────────────────────────────────────────────────────────
-    private static final Color BG     = new Color(0xF0F2F5);
-    private static final Color CARD   = Color.WHITE;
-    private static final Color BORDER = new Color(0xE2E8F0);
-    private static final Color TXT_D  = new Color(0x1A202C);
-    private static final Color TXT_G  = new Color(0x718096);
-    private static final Color NAVY   = new Color(0x1A3A5C);
-    private static final Color BLUE   = new Color(0x2563EB);
-    private static final Color GREEN  = new Color(0x059669);
+    // ── Paleta — desde UITheme (identidad SENA) ───────────────────────────────
+    private static final Color BG     = UITheme.BG_SECONDARY;
+    private static final Color CARD   = UITheme.BG_WHITE;
+    private static final Color BORDER = UITheme.BORDER;
+    private static final Color TXT_D  = UITheme.TEXT_PRIMARY;
+    private static final Color TXT_G  = UITheme.TEXT_SECONDARY;
+    private static final Color NAVY   = UITheme.PRIMARY;
+    private static final Color BLUE   = UITheme.PRIMARY;
+    private static final Color GREEN  = UITheme.SECONDARY;
 
     private static final int PAGE_SIZE = AuditoriaService.PAGE_SIZE;
 

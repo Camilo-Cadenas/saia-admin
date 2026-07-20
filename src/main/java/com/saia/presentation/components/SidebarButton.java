@@ -16,17 +16,21 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
 
+import com.saia.presentation.UITheme;
+
 /**
- * Botón de la barra lateral del menú de navegación.
- * Soporta estado activo (seleccionado) y hover.
+ * Botón de la barra lateral con paleta de identidad SENA.
+ * Estado activo: fondo verde pálido (#E6F3F2) + línea lateral verde (#238276).
+ * Estado hover: fondo gris muy claro.
  */
 public class SidebarButton extends JButton {
 
-    private static final Color COLOR_ACTIVE_BG   = new Color(0xE8F5E9);
-    private static final Color COLOR_ACTIVE_TEXT  = new Color(0x2E7D32);
-    private static final Color COLOR_NORMAL_TEXT  = new Color(0x444444);
-    private static final Color COLOR_HOVER_BG    = new Color(0xF1F8F2);
-    private static final Color COLOR_ACTIVE_LINE  = new Color(0x2E7D32);
+    // Paleta extraída de UITheme para el sidebar
+    private static final Color COLOR_ACTIVE_BG   = UITheme.PRIMARY_PALE;
+    private static final Color COLOR_ACTIVE_TEXT  = UITheme.PRIMARY;
+    private static final Color COLOR_NORMAL_TEXT  = new Color(0x374151);
+    private static final Color COLOR_HOVER_BG    = new Color(0xF0F4F3);
+    private static final Color COLOR_ACTIVE_LINE  = UITheme.PRIMARY;
 
     private boolean active  = false;
     private boolean hovered = false;
@@ -38,7 +42,7 @@ public class SidebarButton extends JButton {
         setBorderPainted(false);
         setFocusPainted(false);
         setHorizontalAlignment(SwingConstants.LEFT);
-        setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        setFont(UITheme.FONT_SIDEBAR);
         setForeground(COLOR_NORMAL_TEXT);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         setIconTextGap(10);
@@ -54,7 +58,9 @@ public class SidebarButton extends JButton {
 
     public void setActive(boolean active) {
         this.active = active;
-        setFont(new Font("Segoe UI", active ? Font.BOLD : Font.PLAIN, 13));
+        setFont(active
+            ? UITheme.FONT_SIDEBAR.deriveFont(Font.BOLD)
+            : UITheme.FONT_SIDEBAR);
         setForeground(active ? COLOR_ACTIVE_TEXT : COLOR_NORMAL_TEXT);
         repaint();
     }
@@ -69,10 +75,9 @@ public class SidebarButton extends JButton {
         int w = getWidth(), h = getHeight();
 
         if (active) {
-            // Fondo verde muy claro redondeado
             g2.setColor(COLOR_ACTIVE_BG);
             g2.fill(new RoundRectangle2D.Float(4, 2, w - 8, h - 4, 8, 8));
-            // Línea verde izquierda
+            // Línea de acento izquierda con el verde principal SENA
             g2.setColor(COLOR_ACTIVE_LINE);
             g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g2.drawLine(4, 6, 4, h - 6);

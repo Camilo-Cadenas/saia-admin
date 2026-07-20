@@ -55,6 +55,7 @@ import com.saia.data.GeneradorReportesDAO;
 import com.saia.model.FiltrosReporte;
 import com.saia.model.FormatoDescarga;
 import com.saia.model.TipoReporte;
+import com.saia.presentation.UITheme;
 
 /**
  * Panel "Descarga de Reportes" — diseño completo con:
@@ -66,15 +67,15 @@ import com.saia.model.TipoReporte;
  */
 public class DescargaReportesPanel extends JPanel {
 
-    // ── Paleta ────────────────────────────────────────────────────────────────
-    static final Color BG       = new Color(0xF0F2F5);
-    static final Color CARD     = Color.WHITE;
-    static final Color BORDER   = new Color(0xE2E8F0);
-    static final Color TXT_D    = new Color(0x1A202C);
-    static final Color TXT_G    = new Color(0x718096);
-    static final Color C_GREEN  = new Color(0x059669);
-    static final Color C_BLUE   = new Color(0x2563EB);
-    static final Color NAVY     = new Color(0x1A3A5C);
+    // ── Paleta — desde UITheme (identidad SENA) ───────────────────────────────
+    static final Color BG       = UITheme.BG_SECONDARY;
+    static final Color CARD     = UITheme.BG_WHITE;
+    static final Color BORDER   = UITheme.BORDER;
+    static final Color TXT_D    = UITheme.TEXT_PRIMARY;
+    static final Color TXT_G    = UITheme.TEXT_SECONDARY;
+    static final Color C_GREEN  = UITheme.SECONDARY;
+    static final Color C_BLUE   = UITheme.PRIMARY;
+    static final Color NAVY     = UITheme.PRIMARY;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 

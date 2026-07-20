@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import com.saia.business.AuthService;
+import com.saia.presentation.UITheme;
 import com.saia.presentation.components.SidebarButton;
 import com.saia.util.SessionManager;
 
@@ -54,11 +55,11 @@ import com.saia.util.SessionManager;
 public class HomeFrame extends JFrame {
 
     // ── Colores ───────────────────────────────────────────────────────────────
-    private static final Color GREEN_DARK  = new Color(0x1A5C23);
+    private static final Color GREEN_DARK  = UITheme.TOPBAR_START;
     private static final Color SIDEBAR_BG  = Color.WHITE;
-    private static final Color BORDER_C    = new Color(0xE8E8E8);
-    private static final Color TEXT_GRAY   = new Color(0x888888);
-    private static final Color SECT_LABEL  = new Color(0xAAAAAA);
+    private static final Color BORDER_C    = UITheme.BORDER;
+    private static final Color TEXT_GRAY   = UITheme.TEXT_SECONDARY;
+    private static final Color SECT_LABEL  = UITheme.TEXT_LIGHT;
 
     // ── Navegación ────────────────────────────────────────────────────────────
     private static final String PAGE_INICIO      = "INICIO";
@@ -134,8 +135,8 @@ public class HomeFrame extends JFrame {
         JPanel bar = new JPanel(new BorderLayout()) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
-                GradientPaint gp = new GradientPaint(0, 0, GREEN_DARK,
-                        getWidth(), 0, new Color(0x1B5E20));
+                GradientPaint gp = new GradientPaint(0, 0, UITheme.TOPBAR_START,
+                        getWidth(), 0, UITheme.TOPBAR_END);
                 g2.setPaint(gp);
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 g2.dispose();
@@ -176,15 +177,15 @@ public class HomeFrame extends JFrame {
         brandTxt.setBorder(new EmptyBorder(14, 0, 0, 0));
 
         JLabel lSaia = new JLabel("SAIA");
-        lSaia.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lSaia.setFont(UITheme.FONT_PAGE_TITLE);
         lSaia.setForeground(Color.WHITE);
 
         JLabel lSub  = new JLabel("Sistema de Autogestión");
-        lSub.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lSub.setFont(UITheme.FONT_CAPTION);
         lSub.setForeground(new Color(255,255,255,180));
 
         JLabel lSub2 = new JLabel("de Aprendices SENA");
-        lSub2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lSub2.setFont(UITheme.FONT_CAPTION);
         lSub2.setForeground(new Color(255,255,255,180));
 
         brandTxt.add(lSaia);
@@ -201,7 +202,7 @@ public class HomeFrame extends JFrame {
         menuIcon.setFont(new Font("Segoe UI", Font.PLAIN, 18));
         menuIcon.setForeground(Color.WHITE);
         JLabel pageLabel = new JLabel("Inicio");
-        pageLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        pageLabel.setFont(UITheme.FONT_SECTION);
         pageLabel.setForeground(Color.WHITE);
         pageLabel.setName("pageLabel");
         center.add(menuIcon);
@@ -259,11 +260,11 @@ public class HomeFrame extends JFrame {
         info.setOpaque(false);
 
         JLabel nameLbl = new JLabel(nombre.isEmpty() ? "Administrador" : nombre);
-        nameLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        nameLbl.setFont(UITheme.FONT_LABEL);
         nameLbl.setForeground(Color.WHITE);
 
         JLabel roleLbl = new JLabel("Rol: Administrador");
-        roleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        roleLbl.setFont(UITheme.FONT_CAPTION);
         roleLbl.setForeground(new Color(255,255,255,180));
 
         info.add(nameLbl);
@@ -375,8 +376,8 @@ public class HomeFrame extends JFrame {
                 super.paintComponent(g);
             }
         };
-        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnLogout.setForeground(new Color(0xC62828));
+        btnLogout.setFont(UITheme.FONT_LABEL);
+        btnLogout.setForeground(UITheme.ERROR);
         btnLogout.setOpaque(false);
         btnLogout.setContentAreaFilled(false);
         btnLogout.setBorderPainted(false);
@@ -399,7 +400,7 @@ public class HomeFrame extends JFrame {
 
     private JLabel sectionLabel(String text) {
         JLabel lbl = new JLabel(text);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        lbl.setFont(UITheme.FONT_SIDEBAR_SEC);
         lbl.setForeground(SECT_LABEL);
         lbl.setBorder(new EmptyBorder(4, 18, 2, 14));
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -421,11 +422,11 @@ public class HomeFrame extends JFrame {
 
         JLabel copy = new JLabel("© 2025 - SENA. Todos los derechos reservados.",
                 SwingConstants.CENTER);
-        copy.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        copy.setFont(UITheme.FONT_CAPTION);
         copy.setForeground(TEXT_GRAY);
 
         JLabel ver = new JLabel("Versión 1.0.0  ");
-        ver.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        ver.setFont(UITheme.FONT_CAPTION);
         ver.setForeground(TEXT_GRAY);
 
         footer.add(copy, BorderLayout.CENTER);

@@ -32,6 +32,7 @@ import javax.swing.border.EmptyBorder;
 import com.saia.business.DashboardService;
 import com.saia.business.DashboardStats;
 import com.saia.data.DashboardDAO.ActividadItem;
+import com.saia.presentation.UITheme;
 import com.saia.presentation.components.DonutChart;
 import com.saia.util.SessionManager;
 
@@ -42,15 +43,15 @@ import com.saia.util.SessionManager;
  */
 public class InicioPanel extends JPanel {
 
-    // Colores
-    private static final Color GREEN_MID   = new Color(0x2E7D32);
-    private static final Color GREEN_PALE  = new Color(0xE8F5E9);
-    private static final Color BG_PAGE     = new Color(0xF5F6FA);
-    private static final Color CARD_BG     = Color.WHITE;
-    private static final Color BORDER_C    = new Color(0xE8E8E8);
-    private static final Color TEXT_DARK   = new Color(0x1A1A1A);
-    private static final Color TEXT_GRAY   = new Color(0x666666);
-    private static final Color TEXT_LIGHT  = new Color(0x999999);
+    // Colores — desde UITheme (paleta SENA)
+    private static final Color GREEN_MID   = UITheme.PRIMARY;
+    private static final Color GREEN_PALE  = UITheme.PRIMARY_PALE;
+    private static final Color BG_PAGE     = UITheme.BG_SECONDARY;
+    private static final Color CARD_BG     = UITheme.BG_WHITE;
+    private static final Color BORDER_C    = UITheme.BORDER;
+    private static final Color TEXT_DARK   = UITheme.TEXT_PRIMARY;
+    private static final Color TEXT_GRAY   = UITheme.TEXT_SECONDARY;
+    private static final Color TEXT_LIGHT  = UITheme.TEXT_LIGHT;
 
     private final DashboardService service = new DashboardService();
 
@@ -144,10 +145,10 @@ public class InicioPanel extends JPanel {
         txt.setBorder(new EmptyBorder(10, 0, 0, 0));
         String nombre = SessionManager.getInstance().getAdminNombre();
         JLabel t1 = new JLabel("¡Bienvenido, " + (nombre.isEmpty() ? "Administrador" : nombre) + "!");
-        t1.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        t1.setFont(UITheme.FONT_SECTION);
         t1.setForeground(TEXT_DARK);
         JLabel t2 = new JLabel("Aquí tienes un resumen general del sistema SAIA.");
-        t2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        t2.setFont(UITheme.FONT_BODY);
         t2.setForeground(TEXT_GRAY);
         txt.add(t1); txt.add(t2);
         left.add(txt);
@@ -233,17 +234,17 @@ public class InicioPanel extends JPanel {
         icoBox.add(icoLbl);
 
         JLabel titleLbl = new JLabel(title);
-        titleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        titleLbl.setFont(UITheme.FONT_CAPTION);
         titleLbl.setForeground(TEXT_GRAY);
         titleLbl.putClientProperty("type", "title");
 
         JLabel numLbl = new JLabel(num);
-        numLbl.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        numLbl.setFont(UITheme.FONT_KPI);
         numLbl.setForeground(TEXT_DARK);
         numLbl.putClientProperty("type", "num");
 
         JLabel subLbl = new JLabel(" ");
-        subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        subLbl.setFont(UITheme.FONT_CAPTION);
         subLbl.setForeground(TEXT_LIGHT);
         subLbl.putClientProperty("type", "sub");
 
@@ -300,7 +301,7 @@ public class InicioPanel extends JPanel {
         card.setBorder(new EmptyBorder(16, 16, 16, 16));
 
         JLabel title = new JLabel("\u2261  Actividad Reciente");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        title.setFont(UITheme.FONT_SECTION);
         title.setForeground(TEXT_DARK);
         card.add(title, BorderLayout.NORTH);
 
@@ -323,11 +324,11 @@ public class InicioPanel extends JPanel {
         card.setBorder(new EmptyBorder(16, 16, 16, 16));
 
         JLabel title = new JLabel("\uD83D\uDCC8  Reportes por Tipo");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        title.setFont(UITheme.FONT_SECTION);
         title.setForeground(TEXT_DARK);
 
         JLabel subtitle = new JLabel("Este mes");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        subtitle.setFont(UITheme.FONT_CAPTION);
         subtitle.setForeground(TEXT_GRAY);
 
         JPanel header = new JPanel(new BorderLayout());
@@ -373,7 +374,7 @@ public class InicioPanel extends JPanel {
         JPanel wrap = new JPanel(new BorderLayout());
         wrap.setOpaque(false);
         JLabel title = new JLabel("\u21C4  Ingresos y Salidas de Hoy");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        title.setFont(UITheme.FONT_SECTION);
         title.setForeground(TEXT_DARK);
         title.setBorder(new EmptyBorder(0, 0, 10, 0));
         wrap.add(title, BorderLayout.NORTH);
@@ -391,11 +392,11 @@ public class InicioPanel extends JPanel {
         arrowLbl.setForeground(accentColor);
 
         JLabel titleLbl = new JLabel(label);
-        titleLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        titleLbl.setFont(UITheme.FONT_CAPTION);
         titleLbl.setForeground(TEXT_GRAY);
 
         JLabel numLbl = new JLabel("...");
-        numLbl.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        numLbl.setFont(UITheme.FONT_KPI);
         numLbl.setForeground(TEXT_DARK);
         numLbl.putClientProperty("type", "num");
 

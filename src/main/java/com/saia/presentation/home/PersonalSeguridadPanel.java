@@ -9,6 +9,7 @@ import javax.swing.SwingUtilities;
 
 import com.saia.business.PersonalSeguridadService;
 import com.saia.model.PersonalSeguridad;
+import com.saia.presentation.UITheme;
 
 /**
  * Panel principal de "Personal de Seguridad".
@@ -19,17 +20,17 @@ import com.saia.model.PersonalSeguridad;
  */
 public class PersonalSeguridadPanel extends JPanel {
 
-    // ── Colores ───────────────────────────────────────────────────────────────
-    static final Color NAVY       = new Color(0x1A3A5C);
-    static final Color NAVY_LIGHT = new Color(0x2C5282);
-    static final Color GREEN      = new Color(0x2E7D32);
-    static final Color BG_PAGE    = new Color(0xF5F6FA);
-    static final Color CARD_BG    = Color.WHITE;
-    static final Color BORDER_C   = new Color(0xDDE1E7);
-    static final Color BORDER_ERR = new Color(0xC62828);
-    static final Color TEXT_DARK  = new Color(0x1A1A2E);
-    @SuppressWarnings("unused") // usada vía import static en sub-paneles
-    static final Color TEXT_GRAY  = new Color(0x5A6474);
+    // ── Colores — ahora desde UITheme ─────────────────────────────────────────
+    static final Color NAVY       = UITheme.PRIMARY;
+    static final Color NAVY_LIGHT = UITheme.PRIMARY_DARK;
+    static final Color GREEN      = UITheme.SECONDARY;
+    static final Color BG_PAGE    = UITheme.BG_SECONDARY;
+    static final Color CARD_BG    = UITheme.BG_WHITE;
+    static final Color BORDER_C   = UITheme.BORDER;
+    static final Color BORDER_ERR = UITheme.ERROR;
+    static final Color TEXT_DARK  = UITheme.TEXT_PRIMARY;
+    @SuppressWarnings("unused")
+    static final Color TEXT_GRAY  = UITheme.TEXT_SECONDARY;
     static final Color BTN_CANCEL = new Color(0x6C757D);
 
     // ── Cards ─────────────────────────────────────────────────────────────────
