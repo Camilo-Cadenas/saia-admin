@@ -30,8 +30,8 @@ import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
-import com.saia.model.FormatoDescarga;
 import com.saia.model.FiltrosReporte;
+import com.saia.model.FormatoDescarga;
 import com.saia.model.TipoReporte;
 
 /**
@@ -61,9 +61,9 @@ public class ReporteExportService {
         File destino = new File(dir, nombre);
 
         switch (formato) {
-            case EXCEL -> exportarExcel(destino, tipo, columnas, filas);
-            case PDF   -> exportarPDF  (destino, tipo, columnas, filas);
-            case CSV   -> exportarCSV  (destino,        columnas, filas);
+            case EXCEL -> exportarExcel(destino, tipo, filtros, columnas, filas);
+            case PDF   -> exportarPDF  (destino, tipo, filtros, columnas, filas);
+            case CSV   -> exportarCSV  (destino,               columnas, filas);
         }
         return destino;
     }
@@ -71,6 +71,7 @@ public class ReporteExportService {
     // ── Excel ─────────────────────────────────────────────────────────────────
 
     private void exportarExcel(File f, TipoReporte tipo,
+                                FiltrosReporte filtros,
                                 List<String> columnas,
                                 List<Map<String, Object>> filas) throws IOException {
         try (Workbook wb = new XSSFWorkbook()) {
@@ -92,29 +93,50 @@ public class ReporteExportService {
             evenStyle.setFillForegroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
             evenStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // Fila de título del reporte
+            // Fila 0 — título
             Row titleRow = sheet.createRow(0);
             Cell titleCell = titleRow.createCell(0);
-            titleCell.setCellValue("SAIA – " + tipo.titulo);
+            titleCell.setCellValue("SAIA — " + tipo.titulo);
             CellStyle tStyle = wb.createCellStyle();
             Font tFont = wb.createFont();
-            tFont.setBold(true);
-            tFont.setFontHeightInPoints((short) 14);
+            tFont.setBold(true); tFont.setFontHeightInPoints((short) 14);
             tStyle.setFont(tFont);
             titleCell.setCellStyle(tStyle);
             sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(
                     0, 0, 0, columnas.size() - 1));
 
-            // Cabecera de columnas
-            Row hdr = sheet.createRow(1);
+            // Fila 1 — metadata de filtros
+            Row metaRow = sheet.createRow(1);
+            String periodo = "";
+            if (filtros.getFechaInicio() != null || filtros.getFechaFin() != null) {
+                periodo = "Período: " +
+                    (filtros.getFechaInicio() != null ? filtros.getFechaInicio().toString() : "—") +
+                    " al " +
+                    (filtros.getFechaFin() != null ? filtros.getFechaFin().toString() : "—");
+            }
+            String generated = "Generado: " + LocalDateTime.now().format(FMT_FILE.ofPattern("dd/MM/yyyy HH:mm"));
+            Cell metaCell = metaRow.createCell(0);
+            metaCell.setCellValue(periodo + "    " + generated +
+                    "    Total: " + filas.size() + " registros");
+            CellStyle metaStyle = wb.createCellStyle();
+            Font metaFont = wb.createFont();
+            metaFont.setItalic(true); metaFont.setFontHeightInPoints((short)10);
+            metaFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
+            metaStyle.setFont(metaFont);
+            metaCell.setCellStyle(metaStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(
+                    1, 1, 0, columnas.size() - 1));
+
+            // Fila 2 — cabecera de columnas
+            Row hdr = sheet.createRow(2);
             for (int c = 0; c < columnas.size(); c++) {
                 Cell cell = hdr.createCell(c);
                 cell.setCellValue(columnas.get(c));
                 cell.setCellStyle(hdrStyle);
             }
 
-            // Datos
-            int rowIdx = 2;
+            // Datos desde fila 3
+            int rowIdx = 3;
             for (Map<String, Object> fila : filas) {
                 Row row = sheet.createRow(rowIdx);
                 CellStyle rowStyle = (rowIdx % 2 == 0) ? evenStyle : null;
@@ -127,22 +149,20 @@ public class ReporteExportService {
                 rowIdx++;
             }
 
-            // Auto-ancho de columnas
+            // Auto-ancho
             for (int c = 0; c < columnas.size(); c++) {
                 sheet.autoSizeColumn(c);
-                int curWidth = sheet.getColumnWidth(c);
-                sheet.setColumnWidth(c, Math.min(curWidth + 512, 15000));
+                sheet.setColumnWidth(c, Math.min(sheet.getColumnWidth(c) + 512, 15000));
             }
 
-            try (FileOutputStream fos = new FileOutputStream(f)) {
-                wb.write(fos);
-            }
+            try (FileOutputStream fos = new FileOutputStream(f)) { wb.write(fos); }
         }
     }
 
     // ── PDF ───────────────────────────────────────────────────────────────────
 
     private void exportarPDF(File f, TipoReporte tipo,
+                              FiltrosReporte filtros,
                               List<String> columnas,
                               List<Map<String, Object>> filas) throws IOException {
         Document doc = new Document(PageSize.A4.rotate());
@@ -169,8 +189,25 @@ public class ReporteExportService {
                 "Generado el " + LocalDateTime.now().format(
                     DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")), subFont);
             sub.setAlignment(Element.ALIGN_CENTER);
-            sub.setSpacingAfter(10f);
+            sub.setSpacingAfter(4f);
             doc.add(sub);
+
+            // Metadata de filtros
+            String periodoStr = "";
+            if (filtros.getFechaInicio() != null || filtros.getFechaFin() != null) {
+                periodoStr = "Período: " +
+                    (filtros.getFechaInicio() != null ? filtros.getFechaInicio().format(
+                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—") +
+                    " al " +
+                    (filtros.getFechaFin() != null ? filtros.getFechaFin().format(
+                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—") +
+                    "   •   ";
+            }
+            String metaStr = periodoStr + "Total de registros: " + filas.size();
+            Paragraph meta = new Paragraph(metaStr, subFont);
+            meta.setAlignment(Element.ALIGN_CENTER);
+            meta.setSpacingAfter(10f);
+            doc.add(meta);
 
             // Tabla
             if (!columnas.isEmpty()) {

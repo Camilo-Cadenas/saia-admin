@@ -1,21 +1,60 @@
 package com.saia.presentation.home;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Desktop;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTable;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 
 import com.saia.business.ReporteExportService;
 import com.saia.data.GeneradorReportesDAO;
-import com.saia.model.*;
+import com.saia.model.FiltrosReporte;
+import com.saia.model.FormatoDescarga;
+import com.saia.model.TipoReporte;
 
 /**
  * Panel "Descarga de Reportes" — diseño completo con:
@@ -171,15 +210,15 @@ public class DescargaReportesPanel extends JPanel {
         grid.add(labeledFilter("Fecha inicio", buildDateSpinner(LocalDate.now().withDayOfMonth(1))));
         grid.add(labeledFilter("Fecha fin",    buildDateSpinner(LocalDate.now())));
         grid.add(labeledFilter("Programa",
-            cmbPrograma = comboBox(List.of("Todos", "ADSO", "Contabilización", "Desarrollo de Software"))));
+            cmbPrograma = comboBox(List.of("Todos"))));
         grid.add(labeledFilter("Estado del aprendiz",
             cmbEstado = comboBox(List.of("Todos", "Activo", "Inactivo"))));
 
         // Fila 2
         grid.add(labeledFilter("Sede / Centro",
-            cmbSede = comboBox(List.of("Todos", "CGTS", "CBNB", "CDA"))));
+            cmbSede = comboBox(List.of("Todos"))));
         grid.add(labeledFilter("Jornada",
-            cmbJornada = comboBox(List.of("Todos", "Mañana", "Tarde", "Noche"))));
+            cmbJornada = comboBox(List.of("Todos"))));
         grid.add(labeledFilter("Guarda / Personal seguridad",
             cmbGuarda = comboBox(List.of("Todos"))));
         grid.add(buildLimpiarBtn());
@@ -188,16 +227,19 @@ public class DescargaReportesPanel extends JPanel {
 
         // Cargar combos desde BD en segundo plano
         SwingWorker<Void, Void> w = new SwingWorker<>() {
+            java.util.List<String> programas, centros, jornadas, guardas;
             @Override protected Void doInBackground() {
-                java.util.List<String> programas = dao.getProgramas();
-                java.util.List<String> centros   = dao.getCentros();
-                java.util.List<String> guardas   = dao.getGuardas();
-                SwingUtilities.invokeLater(() -> {
-                    updateCombo(cmbPrograma, programas);
-                    updateCombo(cmbSede,     centros);
-                    updateCombo(cmbGuarda,   guardas);
-                });
+                programas = dao.getProgramas();
+                centros   = dao.getCentros();
+                jornadas  = dao.getJornadas();
+                guardas   = dao.getGuardas();
                 return null;
+            }
+            @Override protected void done() {
+                updateCombo(cmbPrograma, programas);
+                updateCombo(cmbSede,     centros);
+                updateCombo(cmbJornada,  jornadas);
+                updateCombo(cmbGuarda,   guardas);
             }
         };
         w.execute();
@@ -383,12 +425,20 @@ public class DescargaReportesPanel extends JPanel {
         FiltrosReporte f = new FiltrosReporte();
         f.setFechaInicio(getSpinnerDate(spFechaIni));
         f.setFechaFin   (getSpinnerDate(spFechaFin));
-        f.setPrograma       (comboVal(cmbPrograma));
+        // Para programa y sede, el combo muestra "SIGLA - Nombre"; extraemos la sigla
+        f.setPrograma       (extraerSigla(comboVal(cmbPrograma)));
         f.setEstadoAprendiz (comboVal(cmbEstado));
-        f.setSedeCentro     (comboVal(cmbSede));
+        f.setSedeCentro     (extraerSigla(comboVal(cmbSede)));
         f.setJornada        (comboVal(cmbJornada));
         f.setGuarda         (comboVal(cmbGuarda));
         return f;
+    }
+
+    /** Extrae la sigla del formato "SIGLA - Descripción". Si no hay guion, devuelve el valor completo. */
+    private static String extraerSigla(String v) {
+        if (v == null) return null;
+        int idx = v.indexOf(" - ");
+        return idx > 0 ? v.substring(0, idx).trim() : v;
     }
 
     private String comboVal(JComboBox<String> c) {

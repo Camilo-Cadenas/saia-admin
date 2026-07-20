@@ -203,12 +203,12 @@ public class ReporteConsultaDAO {
             }
         }
 
-        // Ingresos: estado_movimiento=1, agrupados por fecha_hora_ingreso
-        // Salidas:  estado_movimiento=0, agrupados por fecha_hora_salida (misma expresión)
+        // Ingresos: cada fila = un ingreso (no filtrar por estado_movimiento)
+        // Salidas: filas con fecha_hora_salida IS NOT NULL
         String sql =
             "SELECT " + labelExpr + " AS etiqueta, " +
-            "       SUM(CASE WHEN estado_movimiento = 1 THEN 1 ELSE 0 END) AS ingresos, " +
-            "       SUM(CASE WHEN estado_movimiento = 0 THEN 1 ELSE 0 END) AS salidas " +
+            "       COUNT(*) AS ingresos, " +
+            "       SUM(CASE WHEN fecha_hora_salida IS NOT NULL THEN 1 ELSE 0 END) AS salidas " +
             "FROM historial_ingreso " +
             "WHERE DATE(fecha_hora_ingreso) BETWEEN ? AND ? " +
             "GROUP BY " + groupExpr + " ORDER BY " + groupExpr;
@@ -239,8 +239,8 @@ public class ReporteConsultaDAO {
         List<EstadisticaPunto> pts = new ArrayList<>();
         String sql =
             "SELECT DATE(fecha_hora_ingreso) AS dia, " +
-            "       SUM(CASE WHEN estado_movimiento = 1 THEN 1 ELSE 0 END) AS ingresos, " +
-            "       SUM(CASE WHEN estado_movimiento = 0 THEN 1 ELSE 0 END) AS salidas " +
+            "       COUNT(*) AS ingresos, " +
+            "       SUM(CASE WHEN fecha_hora_salida IS NOT NULL THEN 1 ELSE 0 END) AS salidas " +
             "FROM historial_ingreso " +
             "WHERE DATE(fecha_hora_ingreso) BETWEEN ? AND ? " +
             "GROUP BY dia ORDER BY dia";
@@ -263,12 +263,10 @@ public class ReporteConsultaDAO {
 
     /** Totales de ingresos/salidas para un rango de fechas. */
     public ResumenPeriodo getResumen(LocalDate desde, LocalDate hasta) {
-        // Ingresos: estado=1 por fecha_hora_ingreso
-        // Salidas:  estado=0 por fecha_hora_salida
         String sql =
             "SELECT " +
-            "  SUM(CASE WHEN estado_movimiento = 1 THEN 1 ELSE 0 END) AS total_i, " +
-            "  SUM(CASE WHEN estado_movimiento = 0 " +
+            "  COUNT(*) AS total_i, " +
+            "  SUM(CASE WHEN fecha_hora_salida IS NOT NULL " +
             "           AND DATE(fecha_hora_salida) BETWEEN ? AND ? THEN 1 ELSE 0 END) AS total_s, " +
             "  COUNT(DISTINCT DATE(fecha_hora_ingreso)) AS dias " +
             "FROM historial_ingreso " +

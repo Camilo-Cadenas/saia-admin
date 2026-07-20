@@ -1,0 +1,17 @@
+# Maven build output
+target/
+*.class
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sensitive config — never commit real credentials
+src/main/resources/db.properties
+
+# OS files
+.DS_Store
+Thumbs.db
