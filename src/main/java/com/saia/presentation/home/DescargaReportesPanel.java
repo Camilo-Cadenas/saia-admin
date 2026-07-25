@@ -505,7 +505,7 @@ public class DescargaReportesPanel extends JPanel {
         table.setSelectionBackground(new Color(0xEFF6FF));
         table.setFocusable(false);
 
-        UITheme.styleTableHeader(table, NAVY);
+        UITheme.styleTableHeader(table);
 
         // Alternar colores de fila
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {

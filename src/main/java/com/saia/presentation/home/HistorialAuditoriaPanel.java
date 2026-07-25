@@ -240,7 +240,7 @@ public class HistorialAuditoriaPanel extends JPanel {
         table.setIntercellSpacing(new Dimension(0, 0));
 
         // Header
-        UITheme.styleTableHeader(table, NAVY);
+        UITheme.styleTableHeader(table);
         table.getTableHeader().setResizingAllowed(true);
 
         // Anchos de columna

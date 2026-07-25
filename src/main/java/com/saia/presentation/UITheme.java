@@ -94,10 +94,13 @@ public final class UITheme {
     public static final Color ERROR          = new Color(0xC62828);
 
     // ── Topbar ────────────────────────────────────────────────────────────────
-    /** Inicio del gradiente del topbar */
+    /** Topbar gradiente inicio */
     public static final Color TOPBAR_START = new Color(0x1A6B5F);
-    /** Fin del gradiente del topbar */
+    /** Topbar gradiente fin */
     public static final Color TOPBAR_END   = new Color(0x238276);
+
+    /** Color de cabecera de todas las tablas de la aplicación */
+    public static final Color TABLE_HEADER_BG = new Color(0x238276); // = PRIMARY
 
     // ── Tipografía ────────────────────────────────────────────────────────────
 
@@ -306,7 +309,7 @@ public final class UITheme {
      * Llama a este método después de agregar la tabla al UI para que el color del header sea visible.
      */
     public static void styleTableHeader(JTable table) {
-        styleTableHeader(table, PRIMARY);
+        styleTableHeader(table, TABLE_HEADER_BG);
     }
 
     /**

@@ -35,7 +35,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -168,26 +167,7 @@ class ListaPanel extends JPanel {
             @Override public boolean isOpaque() { return false; }
         };
 
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(NAVY); header.setForeground(Color.WHITE);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setPreferredSize(new Dimension(0, 38));
-        header.setReorderingAllowed(false);
-
-        // Renderer propio: garantiza texto blanco visible sobre fondo verde SENA
-        header.setDefaultRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(
-                    JTable tbl, Object v, boolean sel, boolean foc, int r, int c) {
-                JLabel lbl = (JLabel) super.getTableCellRendererComponent(tbl, v, sel, foc, r, c);
-                lbl.setBackground(NAVY);
-                lbl.setForeground(Color.WHITE);
-                lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-                lbl.setHorizontalAlignment(SwingConstants.LEFT);
-                lbl.setBorder(new EmptyBorder(0, 10, 0, 6));
-                lbl.setOpaque(true);
-                return lbl;
-            }
-        });
+        com.saia.presentation.UITheme.styleTableHeader(table);
 
         table.setBackground(CARD_BG);    table.setForeground(TEXT_DARK);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -203,7 +183,7 @@ class ListaPanel extends JPanel {
         scroll.getViewport().setBackground(CARD_BG);
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        card.add(header, BorderLayout.NORTH);
+        card.add(table.getTableHeader(), BorderLayout.NORTH);
         card.add(scroll,  BorderLayout.CENTER);
         return card;
     }

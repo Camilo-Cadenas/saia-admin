@@ -215,7 +215,7 @@ public class AprendicesPanel extends JPanel {
             @Override public boolean isOpaque() { return false; }
         };
 
-        com.saia.presentation.UITheme.styleTableHeader(table, NAVY);
+        com.saia.presentation.UITheme.styleTableHeader(table);
 
         table.setBackground(CARD_BG);
         table.setForeground(TEXT_DARK);
