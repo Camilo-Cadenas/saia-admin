@@ -103,7 +103,7 @@ public class BloqueoPanel extends JPanel {
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(0, 0, 14, 0));
 
-        JLabel titulo = new JLabel("\uD83D\uDD12  Usuarios Bloqueados");
+        JLabel titulo = new JLabel("Usuarios Bloqueados");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titulo.setForeground(TEXT_DARK);
 
@@ -346,7 +346,7 @@ public class BloqueoPanel extends JPanel {
     }
 
     private static class HabilitarRenderer implements TableCellRenderer {
-        private final JButton btn = makeStaticBtn("\u2705  Habilitar", GREEN);
+        private final JButton btn = makeStaticBtn("Habilitar", GREEN);
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) { return btn; }
     }
@@ -359,7 +359,7 @@ public class BloqueoPanel extends JPanel {
         HabilitarEditor(BloqueoPanel p) {
             super(new JCheckBox());
             panelRef = p;
-            btn = makeStaticBtn("\u2705  Habilitar", GREEN);
+            btn = makeStaticBtn("Habilitar", GREEN);
             btn.addActionListener(e -> {
                 fireEditingStopped();
                 if (current != null) panelRef.habilitar(current);

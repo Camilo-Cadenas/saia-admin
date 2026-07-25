@@ -304,7 +304,7 @@ public class HomeFrame extends JFrame {
         sidebar.add(sectionLabel("GESTIÓN DE USUARIOS"));
         sidebar.add(Box.createVerticalStrut(2));
 
-        btnPersonal = navBtn("\uD83D\uDC6E  Personal de Seguridad");
+        btnPersonal = navBtn("·  Personal de Seguridad");
         btnPersonal.addActionListener(e -> navigate(PAGE_PERSONAL));
         sidebar.add(btnPersonal);
 
@@ -312,7 +312,7 @@ public class HomeFrame extends JFrame {
         btnAprendices.addActionListener(e -> navigate(PAGE_APRENDICES));
         sidebar.add(btnAprendices);
 
-        btnBloqueo = navBtn("\uD83D\uDD12  Usuarios Bloqueados");
+        btnBloqueo = navBtn("\u26D4  Usuarios Bloqueados");
         btnBloqueo.addActionListener(e -> navigate(PAGE_BLOQUEO));
         sidebar.add(btnBloqueo);
 
@@ -321,7 +321,7 @@ public class HomeFrame extends JFrame {
         sidebar.add(sectionLabel("REPORTES"));
         sidebar.add(Box.createVerticalStrut(2));
 
-        btnReportes = navBtn("\uD83D\uDCCB  Gestión de Reportes");
+        btnReportes = navBtn("\u2630  Gestión de Reportes");
         btnReportes.addActionListener(e -> navigate(PAGE_REPORTES));
         sidebar.add(btnReportes);
 
@@ -334,12 +334,12 @@ public class HomeFrame extends JFrame {
         sidebar.add(sectionLabel("AUDITORÍA"));
         sidebar.add(Box.createVerticalStrut(2));
 
-        btnAuditoria = navBtn("\uD83D\uDDD3  Historial de Auditoría");
+        btnAuditoria = navBtn("\u2261  Historial de Auditoría");
         btnAuditoria.addActionListener(e -> navigate(PAGE_AUDITORIA));
         sidebar.add(btnAuditoria);
 
         // Estadísticas de Ingresos/Salidas bajo Auditoría
-        btnEstadisticas = navBtn("\uD83D\uDCCA  Estadísticas Ingr./Salidas");
+        btnEstadisticas = navBtn("\u25A3  Estadísticas Ingr./Salidas");
         btnEstadisticas.addActionListener(e -> navigate(PAGE_ESTADISTICAS));
         sidebar.add(btnEstadisticas);
 

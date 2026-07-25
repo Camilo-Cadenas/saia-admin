@@ -347,8 +347,13 @@ class ListaPanel extends JPanel {
     }
 
     // ── Columna EDITAR ────────────────────────────────────────────────────────
+    // Color diferenciado: verde complementario SENA (#596548) para distinguirlo de Bloquear
+    private static final Color EDIT_COLOR    = new Color(0x238276); // verde principal SENA
+    private static final Color BLOCK_COLOR   = new Color(0xC62828); // rojo
+    private static final Color ENABLE_COLOR  = new Color(0x596548); // verde complementario
+
     private static class EditarRenderer implements TableCellRenderer {
-        private final JButton btn = makeStaticBtn("\u270E  Editar", NAVY);
+        private final JButton btn = makeStaticBtn("Editar", EDIT_COLOR);
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) { return btn; }
     }
@@ -361,7 +366,7 @@ class ListaPanel extends JPanel {
         EditarEditor(PersonalSeguridadPanel p) {
             super(new JCheckBox());
             panelRef = p;
-            btn = makeStaticBtn("\u270E  Editar", NAVY);
+            btn = makeStaticBtn("Editar", EDIT_COLOR);
             btn.addActionListener(e -> { fireEditingStopped(); if (g != null) panelRef.abrirEditar(g); });
         }
 
@@ -378,8 +383,8 @@ class ListaPanel extends JPanel {
                 boolean sel, boolean foc, int r, int c) {
             boolean activa = !(v instanceof PersonalSeguridad) || ((PersonalSeguridad) v).isCuentaActiva();
             return makeStaticBtn(
-                activa ? "\uD83D\uDD12 Bloquear" : "\u2705 Habilitar",
-                activa ? new Color(0xC62828) : new Color(0x2E7D32));
+                activa ? "Bloquear" : "Habilitar",
+                activa ? BLOCK_COLOR : ENABLE_COLOR);
         }
     }
 
@@ -438,8 +443,8 @@ class ListaPanel extends JPanel {
                 boolean sel, int r, int c) {
             g = (v instanceof PersonalSeguridad) ? (PersonalSeguridad) v : null;
             boolean activa = g == null || g.isCuentaActiva();
-            btn.setText(activa ? "\uD83D\uDD12 Bloquear" : "\u2705 Habilitar");
-            btn.setBackground(activa ? new Color(0xC62828) : new Color(0x2E7D32));
+            btn.setText(activa ? "Bloquear" : "Habilitar");
+            btn.setBackground(activa ? BLOCK_COLOR : ENABLE_COLOR);
             return btn;
         }
         @Override public Object getCellEditorValue() { return g; }

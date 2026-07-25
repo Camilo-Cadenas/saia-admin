@@ -408,16 +408,19 @@ public class AprendicesPanel extends JPanel {
 
     /** Renderer del botón de acción. */
     private static class AccionRenderer implements TableCellRenderer {
+        private static final Color BLOCK_BG  = new Color(0xC62828);
+        private static final Color ENABLE_BG = new Color(0x596548);
+
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) {
             boolean activo = v instanceof Aprendiz && ((Aprendiz) v).isCuentaActiva();
             return makeBtn(activo);
         }
         private static JButton makeBtn(boolean activo) {
-            JButton btn = new JButton(activo ? "\uD83D\uDD12 Bloquear" : "\u2705 Habilitar");
+            JButton btn = new JButton(activo ? "Bloquear" : "Habilitar");
             btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
             btn.setForeground(Color.WHITE);
-            btn.setBackground(activo ? new Color(0xC62828) : new Color(0x2E7D32));
+            btn.setBackground(activo ? BLOCK_BG : ENABLE_BG);
             btn.setOpaque(true);
             btn.setBorderPainted(false);
             btn.setFocusPainted(false);
@@ -427,6 +430,9 @@ public class AprendicesPanel extends JPanel {
 
     /** Editor del botón de acción. */
     private static class AccionEditor extends DefaultCellEditor {
+        private static final Color BLOCK_BG  = new Color(0xC62828);
+        private static final Color ENABLE_BG = new Color(0x596548);
+
         private final AprendicesPanel panelRef;
         private Aprendiz current;
         private final JButton btn;
@@ -451,8 +457,8 @@ public class AprendicesPanel extends JPanel {
                 boolean sel, int r, int c) {
             current = (v instanceof Aprendiz) ? (Aprendiz) v : null;
             boolean activo = current != null && current.isCuentaActiva();
-            btn.setText(activo ? "\uD83D\uDD12 Bloquear" : "\u2705 Habilitar");
-            btn.setBackground(activo ? new Color(0xC62828) : new Color(0x2E7D32));
+            btn.setText(activo ? "Bloquear" : "Habilitar");
+            btn.setBackground(activo ? BLOCK_BG : ENABLE_BG);
             return btn;
         }
 
