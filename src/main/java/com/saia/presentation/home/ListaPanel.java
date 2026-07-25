@@ -91,7 +91,8 @@ class ListaPanel extends JPanel {
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(0, 0, 14, 0));
 
-        JLabel titulo = new JLabel("\uD83D\uDC6E  Personal de Seguridad");
+        JLabel titulo = new JLabel("  Personal de Seguridad");
+        titulo.setIcon(com.saia.presentation.IconUtil.navGuards());
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titulo.setForeground(TEXT_DARK);
 
@@ -140,8 +141,10 @@ class ListaPanel extends JPanel {
             }
         });
 
-        JButton btnNuevo   = makeBtn("\u002B  Nuevo",      GREEN, Color.WHITE, 110);
-        JButton btnRefresh = makeBtn("\u21BB  Actualizar", NAVY,  Color.WHITE, 120);
+        JButton btnNuevo   = makeBtn("  Nuevo",      GREEN, Color.WHITE, 110);
+        JButton btnRefresh = makeBtn("  Actualizar", NAVY,  Color.WHITE, 120);
+        btnNuevo.setIcon(com.saia.presentation.IconUtil.add());
+        btnRefresh.setIcon(com.saia.presentation.IconUtil.refresh());
         btnNuevo.addActionListener(e -> parent.mostrar("REGISTRO"));
         btnRefresh.addActionListener(e -> cargarDatos());
 
@@ -327,13 +330,14 @@ class ListaPanel extends JPanel {
     }
 
     // ── Columna EDITAR ────────────────────────────────────────────────────────
-    // Color diferenciado: verde complementario SENA (#596548) para distinguirlo de Bloquear
-    private static final Color EDIT_COLOR    = new Color(0x238276); // verde principal SENA
+    // Color diferenciado: verde oliva para distinguirlo de Bloquear (rojo) y Habilitar (verde)
+    private static final Color EDIT_COLOR    = new Color(0x8AAE2C); // verde principal SENA
     private static final Color BLOCK_COLOR   = new Color(0xC62828); // rojo
-    private static final Color ENABLE_COLOR  = new Color(0x596548); // verde complementario
+    private static final Color ENABLE_COLOR  = new Color(0x2E7D32); // verde oscuro
 
     private static class EditarRenderer implements TableCellRenderer {
-        private final JButton btn = makeStaticBtn("Editar", EDIT_COLOR);
+        private final JButton btn = makeStaticBtn("Editar", EDIT_COLOR,
+            com.saia.presentation.IconUtil.tblEdit());
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) { return btn; }
     }
@@ -346,7 +350,7 @@ class ListaPanel extends JPanel {
         EditarEditor(PersonalSeguridadPanel p) {
             super(new JCheckBox());
             panelRef = p;
-            btn = makeStaticBtn("Editar", EDIT_COLOR);
+            btn = makeStaticBtn("Editar", EDIT_COLOR, com.saia.presentation.IconUtil.tblEdit());
             btn.addActionListener(e -> { fireEditingStopped(); if (g != null) panelRef.abrirEditar(g); });
         }
 
@@ -364,7 +368,9 @@ class ListaPanel extends JPanel {
             boolean activa = !(v instanceof PersonalSeguridad) || ((PersonalSeguridad) v).isCuentaActiva();
             return makeStaticBtn(
                 activa ? "Bloquear" : "Habilitar",
-                activa ? BLOCK_COLOR : ENABLE_COLOR);
+                activa ? BLOCK_COLOR : ENABLE_COLOR,
+                activa ? com.saia.presentation.IconUtil.tblLock()
+                       : com.saia.presentation.IconUtil.tblUnlock());
         }
     }
 
@@ -425,6 +431,8 @@ class ListaPanel extends JPanel {
             boolean activa = g == null || g.isCuentaActiva();
             btn.setText(activa ? "Bloquear" : "Habilitar");
             btn.setBackground(activa ? BLOCK_COLOR : ENABLE_COLOR);
+            btn.setIcon(activa ? com.saia.presentation.IconUtil.tblLock()
+                               : com.saia.presentation.IconUtil.tblUnlock());
             return btn;
         }
         @Override public Object getCellEditorValue() { return g; }
@@ -432,11 +440,18 @@ class ListaPanel extends JPanel {
 
     // ── Helper de botones de tabla ────────────────────────────────────────────
     private static JButton makeStaticBtn(String text, Color bg) {
+        return makeStaticBtn(text, bg, null);
+    }
+
+    private static JButton makeStaticBtn(String text, Color bg,
+            javax.swing.Icon icon) {
         JButton b = new JButton(text);
+        if (icon != null) b.setIcon(icon);
         b.setFont(new Font("Segoe UI", Font.BOLD, 11));
         b.setForeground(Color.WHITE); b.setBackground(bg);
         b.setOpaque(true); b.setBorderPainted(false); b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        b.setIconTextGap(4);
         return b;
     }
 }

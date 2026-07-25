@@ -13,19 +13,27 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
 
 import com.saia.presentation.UITheme;
 
 /**
- * Botón de la barra lateral con paleta de identidad SENA.
- * Estado activo: fondo verde pálido (#E6F3F2) + línea lateral verde (#238276).
- * Estado hover: fondo gris muy claro.
+ * Botón de la barra lateral con paleta de identidad SENA y soporte para iconos Ikonli.
+ *
+ * Uso con icono:
+ * <pre>
+ *   SidebarButton btn = new SidebarButton("Inicio",
+ *       IconUtil.navHome(), IconUtil.navHomeActive());
+ * </pre>
+ * Sin icono (retro-compatible):
+ * <pre>
+ *   SidebarButton btn = new SidebarButton("Inicio");
+ * </pre>
  */
 public class SidebarButton extends JButton {
 
-    // Paleta extraída de UITheme para el sidebar
     private static final Color COLOR_ACTIVE_BG   = UITheme.PRIMARY_PALE;
     private static final Color COLOR_ACTIVE_TEXT  = UITheme.PRIMARY;
     private static final Color COLOR_NORMAL_TEXT  = new Color(0x374151);
@@ -35,8 +43,20 @@ public class SidebarButton extends JButton {
     private boolean active  = false;
     private boolean hovered = false;
 
+    private final Icon iconNormal;
+    private final Icon iconActive;
+
+    /** Constructor sin icono — retro-compatible. */
     public SidebarButton(String text) {
+        this(text, null, null);
+    }
+
+    /** Constructor con icono normal y activo. */
+    public SidebarButton(String text, Icon normalIcon, Icon activeIcon) {
         super(text);
+        this.iconNormal = normalIcon;
+        this.iconActive = activeIcon;
+
         setOpaque(false);
         setContentAreaFilled(false);
         setBorderPainted(false);
@@ -50,6 +70,8 @@ public class SidebarButton extends JButton {
         setPreferredSize(new Dimension(200, 40));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
+        if (normalIcon != null) setIcon(normalIcon);
+
         addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) { hovered = true;  repaint(); }
             @Override public void mouseExited(MouseEvent e)  { hovered = false; repaint(); }
@@ -62,6 +84,9 @@ public class SidebarButton extends JButton {
             ? UITheme.FONT_SIDEBAR.deriveFont(Font.BOLD)
             : UITheme.FONT_SIDEBAR);
         setForeground(active ? COLOR_ACTIVE_TEXT : COLOR_NORMAL_TEXT);
+        // Cambia icono según estado
+        if (active && iconActive != null) setIcon(iconActive);
+        else if (!active && iconNormal != null) setIcon(iconNormal);
         repaint();
     }
 
@@ -77,7 +102,6 @@ public class SidebarButton extends JButton {
         if (active) {
             g2.setColor(COLOR_ACTIVE_BG);
             g2.fill(new RoundRectangle2D.Float(4, 2, w - 8, h - 4, 8, 8));
-            // Línea de acento izquierda con el verde principal SENA
             g2.setColor(COLOR_ACTIVE_LINE);
             g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g2.drawLine(4, 6, 4, h - 6);

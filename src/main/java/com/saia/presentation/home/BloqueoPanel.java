@@ -154,7 +154,8 @@ public class BloqueoPanel extends JPanel {
         cmbRol.setPreferredSize(new Dimension(190, 34));
         cmbRol.addActionListener(e -> filtrar());
 
-        JButton btnRefresh = makeBtn("\u21BB  Actualizar", NAVY, Color.WHITE, 120);
+        JButton btnRefresh = makeBtn("  Actualizar", NAVY, Color.WHITE, 120);
+        btnRefresh.setIcon(com.saia.presentation.IconUtil.refresh());
         btnRefresh.addActionListener(e -> cargarDatos());
 
         right.add(new JLabel("Doc:") {{ setFont(new Font("Segoe UI", Font.BOLD, 12)); setForeground(TEXT_DARK); }});
@@ -346,7 +347,8 @@ public class BloqueoPanel extends JPanel {
     }
 
     private static class HabilitarRenderer implements TableCellRenderer {
-        private final JButton btn = makeStaticBtn("Habilitar", GREEN);
+        private final JButton btn = makeStaticBtn("Habilitar", GREEN,
+            com.saia.presentation.IconUtil.tblUnlock());
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) { return btn; }
     }
@@ -359,7 +361,7 @@ public class BloqueoPanel extends JPanel {
         HabilitarEditor(BloqueoPanel p) {
             super(new JCheckBox());
             panelRef = p;
-            btn = makeStaticBtn("Habilitar", GREEN);
+            btn = makeStaticBtn("Habilitar", GREEN, com.saia.presentation.IconUtil.tblUnlock());
             btn.addActionListener(e -> {
                 fireEditingStopped();
                 if (current != null) panelRef.habilitar(current);
@@ -379,7 +381,12 @@ public class BloqueoPanel extends JPanel {
     private static String nvl(String v, String d) { return (v != null && !v.isBlank()) ? v : d; }
 
     private static JButton makeStaticBtn(String text, Color bg) {
+        return makeStaticBtn(text, bg, null);
+    }
+
+    private static JButton makeStaticBtn(String text, Color bg, javax.swing.Icon icon) {
         JButton b = new JButton(text);
+        if (icon != null) { b.setIcon(icon); b.setIconTextGap(4); }
         b.setFont(new Font("Segoe UI", Font.BOLD, 11));
         b.setForeground(Color.WHITE); b.setBackground(bg);
         b.setOpaque(true); b.setBorderPainted(false); b.setFocusPainted(false);

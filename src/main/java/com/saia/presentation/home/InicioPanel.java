@@ -185,22 +185,26 @@ public class InicioPanel extends JPanel {
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
 
         // Tarjeta 1 – Personal de Seguridad
-        JPanel c1 = buildStatCard(GREEN_MID, "\uD83D\uDC6E", "Personal de Seguridad", "...");
+        JPanel c1 = buildStatCard(GREEN_MID, com.saia.presentation.IconUtil.kpiGuards(),
+            "Personal de Seguridad", "...");
         lblPersonalNum      = findNumLabel(c1);
         lblPersonalActInact = findSubLabel(c1);
 
         // Tarjeta 2 – Aprendices
-        JPanel c2 = buildStatCard(new Color(0x1565C0), "\uD83C\uDF93", "Aprendices Registrados", "...");
+        JPanel c2 = buildStatCard(new Color(0x1565C0), com.saia.presentation.IconUtil.kpiUsers(),
+            "Aprendices Registrados", "...");
         lblAprendicesNum      = findNumLabel(c2);
         lblAprendicesActInact = findSubLabel(c2);
 
         // Tarjeta 3 – Reportes
-        JPanel c3 = buildStatCard(new Color(0xE65100), "\uD83D\uDCCB", "Reportes Registrados", "...");
+        JPanel c3 = buildStatCard(new Color(0xE65100), com.saia.presentation.IconUtil.kpiReports(),
+            "Reportes Registrados", "...");
         lblReportesNum      = findNumLabel(c3);
         lblReportesHoyMes   = findSubLabel(c3);
 
         // Tarjeta 4 – Bloqueados
-        JPanel c4 = buildStatCard(new Color(0x6A1B9A), "\uD83D\uDD12", "Usuarios Bloqueados", "...");
+        JPanel c4 = buildStatCard(new Color(0x6A1B9A), com.saia.presentation.IconUtil.kpiBlocked(),
+            "Usuarios Bloqueados", "...");
         lblBloqueadosNum  = findNumLabel(c4);
         lblBloqueadosDet  = findSubLabel(c4);
 
@@ -208,12 +212,12 @@ public class InicioPanel extends JPanel {
         return row;
     }
 
-    private JPanel buildStatCard(Color accentColor, String emoji, String title, String num) {
+    private JPanel buildStatCard(Color accentColor, javax.swing.Icon ikoIcon, String title, String num) {
         JPanel card = card(10);
         card.setLayout(new BorderLayout(0, 4));
         card.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        // Ícono
+        // Ícono circular
         JPanel icoBox = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -226,11 +230,9 @@ public class InicioPanel extends JPanel {
             }
         };
         icoBox.setOpaque(false);
-        icoBox.setPreferredSize(new Dimension(36, 36));
+        icoBox.setPreferredSize(new Dimension(40, 40));
         icoBox.setLayout(new GridBagLayout());
-        JLabel icoLbl = new JLabel(emoji);
-        icoLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
-        icoLbl.setForeground(accentColor);
+        JLabel icoLbl = new JLabel(ikoIcon);
         icoBox.add(icoLbl);
 
         JLabel titleLbl = new JLabel(title);
@@ -323,9 +325,10 @@ public class InicioPanel extends JPanel {
         card.setLayout(new BorderLayout(0, 8));
         card.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        JLabel title = new JLabel("\uD83D\uDCC8  Reportes por Tipo");
+        JLabel title = new JLabel("  Reportes por Tipo");
         title.setFont(UITheme.FONT_SECTION);
         title.setForeground(TEXT_DARK);
+        title.setIcon(com.saia.presentation.IconUtil.navStats());
 
         JLabel subtitle = new JLabel("Este mes");
         subtitle.setFont(UITheme.FONT_CAPTION);

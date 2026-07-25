@@ -322,9 +322,9 @@ public class ReportesPanel extends JPanel {
     private static class OjoRenderer implements TableCellRenderer {
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) {
-            JLabel lbl = new JLabel("\uD83D\uDC41", SwingConstants.CENTER);
-            lbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-            lbl.setForeground(new Color(0x1565C0));
+            JLabel lbl = new JLabel();
+            lbl.setIcon(com.saia.presentation.IconUtil.tblEye());
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             lbl.setOpaque(true);
             lbl.setBackground(sel ? new Color(0xE8F0FB) : CARD_BG);
@@ -338,9 +338,9 @@ public class ReportesPanel extends JPanel {
 
         OjoEditor(ReportesPanel p) {
             super(new JCheckBox());
-            lbl = new JLabel("\uD83D\uDC41", SwingConstants.CENTER);
-            lbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-            lbl.setForeground(new Color(0x1565C0));
+            lbl = new JLabel();
+            lbl.setIcon(com.saia.presentation.IconUtil.tblEye());
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             lbl.setOpaque(true);
             lbl.addMouseListener(new MouseAdapter() {
@@ -555,9 +555,11 @@ public class ReportesPanel extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 30));
                 g2.fillOval(0, 0, getWidth(), getHeight());
-                g2.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 22));
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
                 g2.setColor(color);
-                g2.drawString("\uD83D\uDC64", 20, 44);
+                // Silueta de persona con formas básicas
+                g2.fillOval(20, 10, 30, 30); // cabeza
+                g2.fillArc(10, 40, 50, 30, 0, 180); // cuerpo
                 g2.dispose();
             }
         };

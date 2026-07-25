@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import com.saia.business.AuthService;
+import com.saia.presentation.IconUtil;
 import com.saia.presentation.UITheme;
 import com.saia.presentation.components.SidebarButton;
 import com.saia.util.SessionManager;
@@ -212,9 +213,9 @@ public class HomeFrame extends JFrame {
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
         right.setOpaque(false);
 
-        JLabel bell = new JLabel("\uD83D\uDD14");
-        bell.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-        bell.setForeground(Color.WHITE);
+        JLabel bell = new JLabel();
+        bell.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.BELL, 18, java.awt.Color.WHITE));
         bell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JSeparator sep = new JSeparator(JSeparator.VERTICAL);
@@ -295,7 +296,8 @@ public class HomeFrame extends JFrame {
         sidebar.setBorder(new EmptyBorder(12, 0, 12, 0));
 
         // ── INICIO ────────────────────────────────────────────────────────────
-        btnInicio = navBtn("\uD83C\uDFE0  Inicio");
+        btnInicio = navBtn("  Inicio",
+            IconUtil.navHome(), IconUtil.navHomeActive());
         btnInicio.addActionListener(e -> navigate(PAGE_INICIO));
         sidebar.add(btnInicio);
         sidebar.add(Box.createVerticalStrut(4));
@@ -304,15 +306,18 @@ public class HomeFrame extends JFrame {
         sidebar.add(sectionLabel("GESTIÓN DE USUARIOS"));
         sidebar.add(Box.createVerticalStrut(2));
 
-        btnPersonal = navBtn("·  Personal de Seguridad");
+        btnPersonal = navBtn("  Personal de Seguridad",
+            IconUtil.navGuards(), IconUtil.navGuardsActive());
         btnPersonal.addActionListener(e -> navigate(PAGE_PERSONAL));
         sidebar.add(btnPersonal);
 
-        btnAprendices = navBtn("\uD83C\uDF93  Aprendices");
+        btnAprendices = navBtn("  Aprendices",
+            IconUtil.navStudents(), IconUtil.navStudentsActive());
         btnAprendices.addActionListener(e -> navigate(PAGE_APRENDICES));
         sidebar.add(btnAprendices);
 
-        btnBloqueo = navBtn("\u26D4  Usuarios Bloqueados");
+        btnBloqueo = navBtn("  Usuarios Bloqueados",
+            IconUtil.navBlocked(), IconUtil.navBlockedActive());
         btnBloqueo.addActionListener(e -> navigate(PAGE_BLOQUEO));
         sidebar.add(btnBloqueo);
 
@@ -321,11 +326,13 @@ public class HomeFrame extends JFrame {
         sidebar.add(sectionLabel("REPORTES"));
         sidebar.add(Box.createVerticalStrut(2));
 
-        btnReportes = navBtn("\u2630  Gestión de Reportes");
+        btnReportes = navBtn("  Gestión de Reportes",
+            IconUtil.navReports(), IconUtil.navReportsActive());
         btnReportes.addActionListener(e -> navigate(PAGE_REPORTES));
         sidebar.add(btnReportes);
 
-        btnDescargar = navBtn("\u2B07  Descargar Reportes");
+        btnDescargar = navBtn("  Descargar Reportes",
+            IconUtil.navDownload(), IconUtil.navDownloadActive());
         btnDescargar.addActionListener(e -> navigate(PAGE_DESCARGA));
         sidebar.add(btnDescargar);
 
@@ -334,12 +341,14 @@ public class HomeFrame extends JFrame {
         sidebar.add(sectionLabel("AUDITORÍA"));
         sidebar.add(Box.createVerticalStrut(2));
 
-        btnAuditoria = navBtn("\u2261  Historial de Auditoría");
+        btnAuditoria = navBtn("  Historial de Auditoría",
+            IconUtil.navAudit(), IconUtil.navAuditActive());
         btnAuditoria.addActionListener(e -> navigate(PAGE_AUDITORIA));
         sidebar.add(btnAuditoria);
 
         // Estadísticas de Ingresos/Salidas bajo Auditoría
-        btnEstadisticas = navBtn("\u25A3  Estadísticas Ingr./Salidas");
+        btnEstadisticas = navBtn("  Estadísticas Ingr./Salidas",
+            IconUtil.navStats(), IconUtil.navStatsActive());
         btnEstadisticas.addActionListener(e -> navigate(PAGE_ESTADISTICAS));
         sidebar.add(btnEstadisticas);
 
@@ -348,7 +357,8 @@ public class HomeFrame extends JFrame {
         sidebar.add(sectionLabel("CONFIGURACIÓN"));
         sidebar.add(Box.createVerticalStrut(2));
 
-        btnConfig = navBtn("\u2699  Configuración del Sistema");
+        btnConfig = navBtn("  Configuración del Sistema",
+            IconUtil.navConfig(), IconUtil.navConfigActive());
         btnConfig.addActionListener(e -> showComingSoon("Configuración"));
         sidebar.add(btnConfig);
 
@@ -394,6 +404,15 @@ public class HomeFrame extends JFrame {
 
     private SidebarButton navBtn(String text) {
         SidebarButton btn = new SidebarButton(text);
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        return btn;
+    }
+
+    /** Crea un botón de sidebar con iconos Ikonli para estado normal y activo. */
+    private SidebarButton navBtn(String text,
+            org.kordamp.ikonli.swing.FontIcon normalIcon,
+            org.kordamp.ikonli.swing.FontIcon activeIcon) {
+        SidebarButton btn = new SidebarButton(text, normalIcon, activeIcon);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         return btn;
     }

@@ -98,7 +98,8 @@ public class AprendicesPanel extends JPanel {
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(0, 0, 14, 0));
 
-        JLabel titulo = new JLabel("\uD83C\uDF93  Aprendices");
+        JLabel titulo = new JLabel("  Aprendices");
+        titulo.setIcon(com.saia.presentation.IconUtil.navStudents());
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titulo.setForeground(TEXT_DARK);
 
@@ -124,7 +125,8 @@ public class AprendicesPanel extends JPanel {
         txtBuscarFicha.getDocument().addDocumentListener(dl);
         txtBuscarPrograma.getDocument().addDocumentListener(dl);
 
-        JButton btnRefresh = buildBtn("\u21BB  Actualizar", NAVY, Color.WHITE, 120);
+        JButton btnRefresh = buildBtn("  Actualizar", NAVY, Color.WHITE, 120);
+        btnRefresh.setIcon(com.saia.presentation.IconUtil.refresh());
         btnRefresh.addActionListener(e -> cargarDatos());
 
         right.add(new JLabel("Doc:") {{ setFont(new Font("Segoe UI", Font.BOLD, 12)); setForeground(TEXT_DARK); }});
@@ -409,7 +411,7 @@ public class AprendicesPanel extends JPanel {
     /** Renderer del botón de acción. */
     private static class AccionRenderer implements TableCellRenderer {
         private static final Color BLOCK_BG  = new Color(0xC62828);
-        private static final Color ENABLE_BG = new Color(0x596548);
+        private static final Color ENABLE_BG = new Color(0x2E7D32);
 
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) {
@@ -418,12 +420,15 @@ public class AprendicesPanel extends JPanel {
         }
         private static JButton makeBtn(boolean activo) {
             JButton btn = new JButton(activo ? "Bloquear" : "Habilitar");
+            btn.setIcon(activo ? com.saia.presentation.IconUtil.tblLock()
+                               : com.saia.presentation.IconUtil.tblUnlock());
             btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
             btn.setForeground(Color.WHITE);
             btn.setBackground(activo ? BLOCK_BG : ENABLE_BG);
             btn.setOpaque(true);
             btn.setBorderPainted(false);
             btn.setFocusPainted(false);
+            btn.setIconTextGap(4);
             return btn;
         }
     }
@@ -431,7 +436,7 @@ public class AprendicesPanel extends JPanel {
     /** Editor del botón de acción. */
     private static class AccionEditor extends DefaultCellEditor {
         private static final Color BLOCK_BG  = new Color(0xC62828);
-        private static final Color ENABLE_BG = new Color(0x596548);
+        private static final Color ENABLE_BG = new Color(0x2E7D32);
 
         private final AprendicesPanel panelRef;
         private Aprendiz current;
@@ -446,6 +451,7 @@ public class AprendicesPanel extends JPanel {
             btn.setOpaque(true);
             btn.setBorderPainted(false);
             btn.setFocusPainted(false);
+            btn.setIconTextGap(4);
             btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             btn.addActionListener(e -> {
                 fireEditingStopped();
@@ -459,6 +465,8 @@ public class AprendicesPanel extends JPanel {
             boolean activo = current != null && current.isCuentaActiva();
             btn.setText(activo ? "Bloquear" : "Habilitar");
             btn.setBackground(activo ? BLOCK_BG : ENABLE_BG);
+            btn.setIcon(activo ? com.saia.presentation.IconUtil.tblLock()
+                               : com.saia.presentation.IconUtil.tblUnlock());
             return btn;
         }
 

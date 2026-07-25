@@ -58,12 +58,14 @@ class EditarPanel extends BaseFormPanel {
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         left.setOpaque(false);
 
-        JButton btnVolver = actionBtn("\u2190  Volver al listado", BTN_CANCEL, Color.WHITE, 170);
+        JButton btnVolver = actionBtn("  Volver al listado", BTN_CANCEL, Color.WHITE, 170);
+        btnVolver.setIcon(com.saia.presentation.IconUtil.back());
         btnVolver.addActionListener(e -> parent.mostrar("LISTA"));
 
-        JLabel titulo = new JLabel("\u270E  Editar Personal de Seguridad");
+        JLabel titulo = new JLabel("  Editar Personal de Seguridad");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 17));
         titulo.setForeground(TEXT_DARK);
+        titulo.setIcon(com.saia.presentation.IconUtil.edit());
 
         left.add(btnVolver);
         left.add(titulo);
@@ -76,8 +78,10 @@ class EditarPanel extends BaseFormPanel {
         p.setOpaque(false);
         p.setBorder(new EmptyBorder(0, 0, 4, 0));
 
-        JButton btnGuardar  = actionBtn("\uD83D\uDCBE  GUARDAR CAMBIOS", NAVY,       Color.WHITE, 165);
-        JButton btnCancelar = actionBtn("\u2715  CANCELAR",              BTN_CANCEL, Color.WHITE, 120);
+        JButton btnGuardar  = actionBtn("  GUARDAR CAMBIOS", NAVY,       Color.WHITE, 165);
+        JButton btnCancelar = actionBtn("  CANCELAR",        BTN_CANCEL, Color.WHITE, 120);
+        btnGuardar.setIcon(com.saia.presentation.IconUtil.save());
+        btnCancelar.setIcon(com.saia.presentation.IconUtil.close());
 
         btnGuardar.addActionListener(e -> guardar());
         btnCancelar.addActionListener(e -> parent.mostrar("LISTA"));
@@ -235,7 +239,7 @@ class EditarPanel extends BaseFormPanel {
             }
             @Override protected void done() {
                 btnGuardar.setEnabled(true);
-                btnGuardar.setText("\uD83D\uDCBE  GUARDAR CAMBIOS");
+                btnGuardar.setText("  GUARDAR CAMBIOS");
                 try {
                     switch (get()) {
                         case OK -> {

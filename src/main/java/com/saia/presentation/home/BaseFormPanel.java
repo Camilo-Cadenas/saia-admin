@@ -96,7 +96,10 @@ abstract class BaseFormPanel extends JPanel {
     protected JPanel buildPersonalCard(boolean numDocEditable) {
         JPanel card = formCard();
         card.setLayout(new BorderLayout());
-        card.add(sectionTitle("\uD83D\uDC64  DATOS PERSONALES"), BorderLayout.NORTH);
+        card.add(sectionTitle("  DATOS PERSONALES",
+            com.saia.presentation.IconUtil.icon(
+                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER, 12,
+                java.awt.Color.WHITE)), BorderLayout.NORTH);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
@@ -144,7 +147,10 @@ abstract class BaseFormPanel extends JPanel {
     protected JPanel buildGuardaCard() {
         JPanel card = formCard();
         card.setLayout(new BorderLayout());
-        card.add(sectionTitle("\uD83D\uDEE1  DATOS DEL GUARDA"), BorderLayout.NORTH);
+        card.add(sectionTitle("  DATOS DEL GUARDA",
+            com.saia.presentation.IconUtil.icon(
+                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SHIELD_ALT, 12,
+                java.awt.Color.WHITE)), BorderLayout.NORTH);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
@@ -184,7 +190,7 @@ abstract class BaseFormPanel extends JPanel {
         txtFechaNac.setBorder(new LineBorder(BORDER_C, 1, true));
         txtFechaNac.setPreferredSize(new Dimension(0, 34));
 
-        JButton btnCal = new JButton("\uD83D\uDCC5") {
+        JButton btnCal = new JButton() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -194,8 +200,7 @@ abstract class BaseFormPanel extends JPanel {
                 super.paintComponent(g);
             }
         };
-        btnCal.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 13));
-        btnCal.setForeground(Color.WHITE);
+        btnCal.setIcon(com.saia.presentation.IconUtil.calendar());
         btnCal.setOpaque(false); btnCal.setContentAreaFilled(false);
         btnCal.setBorderPainted(false); btnCal.setFocusPainted(false);
         btnCal.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -328,6 +333,10 @@ abstract class BaseFormPanel extends JPanel {
     }
 
     protected JPanel sectionTitle(String text) {
+        return sectionTitle(text, null);
+    }
+
+    protected JPanel sectionTitle(String text, javax.swing.Icon icon) {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0)) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -339,6 +348,10 @@ abstract class BaseFormPanel extends JPanel {
             }
         };
         p.setOpaque(false); p.setPreferredSize(new Dimension(0, 40));
+        if (icon != null) {
+            JLabel ico = new JLabel(icon);
+            p.add(ico);
+        }
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lbl.setForeground(Color.WHITE);

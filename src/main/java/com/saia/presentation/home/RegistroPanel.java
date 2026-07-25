@@ -57,12 +57,16 @@ class RegistroPanel extends BaseFormPanel {
         left.setOpaque(false);
 
         // Botón volver
-        JButton btnVolver = actionBtn("\u2190  Volver al listado", BTN_CANCEL, Color.WHITE, 170);
+        JButton btnVolver = actionBtn("  Volver al listado", BTN_CANCEL, Color.WHITE, 170);
+        btnVolver.setIcon(com.saia.presentation.IconUtil.back());
         btnVolver.addActionListener(e -> parent.mostrar("LISTA"));
 
-        JLabel titulo = new JLabel("\uD83D\uDC6E  Nuevo Personal de Seguridad");
+        JLabel titulo = new JLabel("  Nuevo Personal de Seguridad");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 17));
         titulo.setForeground(TEXT_DARK);
+        titulo.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_SHIELD,
+            18, com.saia.presentation.UITheme.PRIMARY));
 
         left.add(btnVolver);
         left.add(titulo);
@@ -75,9 +79,12 @@ class RegistroPanel extends BaseFormPanel {
         p.setOpaque(false);
         p.setBorder(new EmptyBorder(0, 0, 4, 0));
 
-        JButton btnGuardar  = actionBtn("\uD83D\uDCBE  GUARDAR", NAVY,       Color.WHITE, 140);
-        JButton btnLimpiar  = actionBtn("\uD83E\uDDF9  LIMPIAR", new Color(0x4A6FA5), Color.WHITE, 130);
-        JButton btnCancelar = actionBtn("\u2715  CANCELAR",      BTN_CANCEL, Color.WHITE, 130);
+        JButton btnGuardar  = actionBtn("  GUARDAR",   NAVY,                  Color.WHITE, 140);
+        JButton btnLimpiar  = actionBtn("  LIMPIAR",   new Color(0x4A6FA5),   Color.WHITE, 130);
+        JButton btnCancelar = actionBtn("  CANCELAR",  BTN_CANCEL,            Color.WHITE, 130);
+        btnGuardar.setIcon(com.saia.presentation.IconUtil.save());
+        btnLimpiar.setIcon(com.saia.presentation.IconUtil.clear());
+        btnCancelar.setIcon(com.saia.presentation.IconUtil.close());
 
         btnGuardar.addActionListener(e -> guardar());
         btnLimpiar.addActionListener(e -> limpiar());
@@ -167,7 +174,7 @@ class RegistroPanel extends BaseFormPanel {
             }
             @Override protected void done() {
                 btnGuardar.setEnabled(true);
-                btnGuardar.setText("\uD83D\uDCBE  GUARDAR");
+                btnGuardar.setText("  GUARDAR");
                 try {
                     switch (get()) {
                         case OK -> {

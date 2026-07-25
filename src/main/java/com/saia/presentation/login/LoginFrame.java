@@ -17,6 +17,8 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.util.Base64;
+import java.util.prefs.Preferences;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -57,6 +59,12 @@ public class LoginFrame extends JFrame {
 
     private final AuthService authService = new AuthService();
 
+    // ── Preferencias "Recordarme" ─────────────────────────────────────────────
+    private static final Preferences PREFS    = Preferences.userNodeForPackage(LoginFrame.class);
+    private static final String PREF_EMAIL    = "saia.login.email";
+    private static final String PREF_PASS     = "saia.login.pass";
+    private static final String PREF_REMEMBER = "saia.login.remember";
+
     private RoundedTextField emailField;
     private RoundedPasswordField passwordField;
     private JCheckBox rememberMeCheck;
@@ -90,6 +98,9 @@ public class LoginFrame extends JFrame {
         splitPane.setDividerLocation(330);
         splitPane.setBorder(null);
         add(splitPane, BorderLayout.CENTER);
+
+        // Cargar credenciales guardadas si "Recordarme" estaba activo
+        loadRememberMe();
     }
 
     // =========================================================
@@ -131,9 +142,10 @@ public class LoginFrame extends JFrame {
         panel.setMinimumSize(new Dimension(330, 600));
 
         // ----- Logo SENA -----
-        JLabel logoLabel = new JLabel("\uD83C\uDFEB", SwingConstants.CENTER);
-        logoLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 42));
-        logoLabel.setForeground(COLOR_WHITE);
+        JLabel logoLabel = new JLabel("", SwingConstants.CENTER);
+        logoLabel.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SCHOOL, 42, COLOR_WHITE));
+        logoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         logoLabel.setBounds(0, 40, 330, 55);
         panel.add(logoLabel);
 
@@ -422,7 +434,8 @@ public class LoginFrame extends JFrame {
         wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
 
         // Ícono candado izquierdo
-        JLabel lockIcon = buildIconLabel("\uD83D\uDD12", 16);
+        JLabel lockIcon = new JLabel(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.LOCK, 16, COLOR_GRAY_TEXT));
         lockIcon.setBorder(new EmptyBorder(0, 12, 0, 0));
 
         passwordField = new RoundedPasswordField(20, 12);
@@ -430,7 +443,9 @@ public class LoginFrame extends JFrame {
         passwordField.addActionListener(e -> performLogin());
 
         // Ícono ojo (toggle visibilidad) derecho
-        togglePasswordLabel = new JLabel("\uD83D\uDC41");
+        togglePasswordLabel = new JLabel();
+        togglePasswordLabel.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 16, COLOR_GRAY_TEXT));
         togglePasswordLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
         togglePasswordLabel.setBorder(new EmptyBorder(0, 0, 0, 12));
         togglePasswordLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -440,10 +455,14 @@ public class LoginFrame extends JFrame {
                 passwordField.togglePasswordVisibility();
                 // Actualizar ícono
                 if (passwordField.isPasswordVisible()) {
-                    togglePasswordLabel.setText("\uD83D\uDEAB"); // ojo tachado (aproximación Unicode)
+                    togglePasswordLabel.setIcon(com.saia.presentation.IconUtil.icon(
+                        org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE_SLASH,
+                        16, COLOR_GRAY_TEXT));
                     togglePasswordLabel.setToolTipText("Ocultar contraseña");
                 } else {
-                    togglePasswordLabel.setText("\uD83D\uDC41");
+                    togglePasswordLabel.setIcon(com.saia.presentation.IconUtil.icon(
+                        org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE,
+                        16, COLOR_GRAY_TEXT));
                     togglePasswordLabel.setToolTipText("Mostrar contraseña");
                 }
             }
@@ -520,9 +539,11 @@ public class LoginFrame extends JFrame {
     }
 
     private RoundedButton buildLoginButton() {
-        RoundedButton btn = new RoundedButton("\uD83D\uDD12  Iniciar sesión",
+        RoundedButton btn = new RoundedButton("  Iniciar sesión",
                 UITheme.PRIMARY, UITheme.PRIMARY_DARK,
                 UITheme.SECONDARY_DARK, Color.WHITE, 28);
+        btn.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SIGN_IN_ALT, 15, Color.WHITE));
         btn.setFont(UITheme.FONT_SECTION);
         btn.setAlignmentX(Component.LEFT_ALIGNMENT);
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
@@ -557,7 +578,7 @@ public class LoginFrame extends JFrame {
     }
 
     private RoundedButton buildBackButton() {
-        RoundedButton btn = new RoundedButton("\uD83D\uDEE1  Volver al sistema",
+        RoundedButton btn = new RoundedButton("  Volver al sistema",
                 COLOR_WHITE, new Color(0xF5F5F5), new Color(0xE0E0E0), new Color(0x444444), 28) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -602,9 +623,9 @@ public class LoginFrame extends JFrame {
         // Línea 1: shield + texto
         JPanel secRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
         secRow.setOpaque(false);
-        JLabel shieldIcon = new JLabel("\uD83D\uDEE1");
-        shieldIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 13));
-        shieldIcon.setForeground(COLOR_GREEN_MID);
+        JLabel shieldIcon = new JLabel();
+        shieldIcon.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SHIELD_ALT, 13, COLOR_GREEN_MID));
         JLabel secText = new JLabel("Acceso seguro y confidencial");
         secText.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         secText.setForeground(COLOR_GRAY_TEXT);
@@ -645,27 +666,38 @@ public class LoginFrame extends JFrame {
 
         // Deshabilitar botón mientras procesa
         loginButton.setEnabled(false);
-        loginButton.setText("\uD83D\uDD12  Verificando...");
+        loginButton.setText("  Verificando...");
+        loginButton.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SPINNER, 15, Color.WHITE));
 
         // Procesar en hilo separado para no bloquear la UI
+        final String emailFinal    = email;
+        final String passwordFinal = password;
         SwingWorker<AuthResult, Void> worker = new SwingWorker<>() {
             @Override
             protected AuthResult doInBackground() throws Exception {
                 Thread.sleep(400); // Efecto visual mínimo
-                return authService.login(email, password);
+                return authService.login(emailFinal, passwordFinal);
             }
 
             @Override
             protected void done() {
                 try {
                     AuthResult result = get();
+                    if (result == AuthResult.SUCCESS) {
+                        // Guardar o borrar credenciales según el checkbox
+                        saveRememberMe(emailFinal, passwordFinal);
+                    }
                     handleAuthResult(result);
                 } catch (InterruptedException | java.util.concurrent.ExecutionException ex) {
                     showError("Error inesperado: " + ex.getMessage());
                     Thread.currentThread().interrupt();
                 } finally {
                     loginButton.setEnabled(true);
-                    loginButton.setText("\uD83D\uDD12  Iniciar sesión");
+                    loginButton.setText("  Iniciar sesión");
+                    loginButton.setIcon(com.saia.presentation.IconUtil.icon(
+                        org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SIGN_IN_ALT,
+                        15, Color.WHITE));
                 }
             }
         };
@@ -674,15 +706,56 @@ public class LoginFrame extends JFrame {
 
     private void handleAuthResult(AuthResult result) {
         if (result == AuthResult.SUCCESS) {
-            // Abrir dashboard y cerrar login — invokeLater evita el warning "New instance ignored"
             dispose();
             SwingUtilities.invokeLater(com.saia.presentation.home.HomeFrame::new);
         } else {
             showError(authService.getMessageForResult(result));
-            // Sacudir ventana visualmente en errores de credenciales
             if (result == AuthResult.INVALID_CREDENTIALS) {
                 shakeWindow();
             }
+        }
+    }
+
+    // ── Recordarme ────────────────────────────────────────────────────────────
+
+    /**
+     * Guarda o elimina las credenciales según el estado del checkbox.
+     * La contraseña se guarda codificada en Base64 (ofuscación básica,
+     * no cifrado fuerte — suficiente para una app de escritorio local).
+     */
+    private void saveRememberMe(String email, String password) {
+        if (rememberMeCheck != null && rememberMeCheck.isSelected()) {
+            PREFS.putBoolean(PREF_REMEMBER, true);
+            PREFS.put(PREF_EMAIL, email);
+            PREFS.put(PREF_PASS, Base64.getEncoder().encodeToString(
+                password.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } else {
+            PREFS.putBoolean(PREF_REMEMBER, false);
+            PREFS.remove(PREF_EMAIL);
+            PREFS.remove(PREF_PASS);
+        }
+    }
+
+    private void loadRememberMe() {
+        boolean remember = PREFS.getBoolean(PREF_REMEMBER, false);
+        if (!remember) return;
+
+        String savedEmail  = PREFS.get(PREF_EMAIL, "");
+        String savedPass64 = PREFS.get(PREF_PASS,  "");
+
+        if (!savedEmail.isEmpty() && emailField != null) {
+            emailField.setText(savedEmail);
+            emailField.setForeground(new Color(0x333333));
+        }
+        if (!savedPass64.isEmpty() && passwordField != null) {
+            try {
+                byte[] decoded = Base64.getDecoder().decode(savedPass64);
+                passwordField.setText(new String(decoded,
+                    java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IllegalArgumentException ignored) { /* Base64 corrupto */ }
+        }
+        if (rememberMeCheck != null) {
+            rememberMeCheck.setSelected(true);
         }
     }
 
@@ -694,7 +767,6 @@ public class LoginFrame extends JFrame {
     private void shakeWindow() {
         final Point origin = getLocation();
         final int distance = 8;
-        // xDelta define el desplazamiento horizontal en cada tick del timer
         final int[] xDelta = {distance, -distance, distance, -distance, distance, -distance, 0};
 
         Timer timer = new Timer(50, null);
