@@ -2,6 +2,7 @@ package com.saia.presentation;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -269,6 +270,27 @@ public final class UITheme {
         header.setPreferredSize(new Dimension(0, 38));
         header.setReorderingAllowed(false);
         header.setBorder(BorderFactory.createEmptyBorder());
+
+        // Renderer propio para garantizar texto blanco visible en el header
+        header.setDefaultRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable tbl, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                        tbl, value, isSelected, hasFocus, row, column);
+                lbl.setBackground(PRIMARY);
+                lbl.setForeground(Color.WHITE);
+                lbl.setFont(FONT_TABLE_HEADER);
+                lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                lbl.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 0, 1,
+                        new Color(PRIMARY.getRed(), PRIMARY.getGreen(), PRIMARY.getBlue(), 60)),
+                    BorderFactory.createEmptyBorder(0, 10, 0, 6)));
+                lbl.setOpaque(true);
+                return lbl;
+            }
+        });
     }
 
     /**
@@ -277,6 +299,44 @@ public final class UITheme {
     public static void styleScrollPane(JScrollPane scroll) {
         scroll.setBorder(new LineBorder(BORDER, 1, true));
         scroll.getViewport().setBackground(BG_WHITE);
+    }
+
+    /**
+     * Aplica el renderer de encabezado SENA (texto blanco sobre fondo verde) a cualquier tabla.
+     * Llama a este método después de agregar la tabla al UI para que el color del header sea visible.
+     */
+    public static void styleTableHeader(JTable table) {
+        styleTableHeader(table, PRIMARY);
+    }
+
+    /**
+     * Aplica el renderer de encabezado con un color de fondo personalizado.
+     */
+    public static void styleTableHeader(JTable table, Color headerBg) {
+        JTableHeader header = table.getTableHeader();
+        header.setBackground(headerBg);
+        header.setForeground(Color.WHITE);
+        header.setFont(FONT_TABLE_HEADER);
+        header.setPreferredSize(new Dimension(0, 38));
+        header.setReorderingAllowed(false);
+        header.setBorder(BorderFactory.createEmptyBorder());
+        header.setDefaultRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(
+                    JTable tbl, Object value, boolean sel, boolean foc, int row, int col) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                        tbl, value, sel, foc, row, col);
+                lbl.setBackground(headerBg);
+                lbl.setForeground(Color.WHITE);
+                lbl.setFont(FONT_TABLE_HEADER);
+                lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                lbl.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 0, 1,
+                        new Color(headerBg.getRed(), headerBg.getGreen(), headerBg.getBlue(), 60)),
+                    BorderFactory.createEmptyBorder(0, 10, 0, 6)));
+                lbl.setOpaque(true);
+                return lbl;
+            }
+        });
     }
 
     /**

@@ -35,7 +35,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -216,21 +215,16 @@ public class AprendicesPanel extends JPanel {
             @Override public boolean isOpaque() { return false; }
         };
 
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(NAVY);
-        header.setForeground(Color.WHITE);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setPreferredSize(new Dimension(0, 36));
-        header.setReorderingAllowed(false);
+        com.saia.presentation.UITheme.styleTableHeader(table, NAVY);
 
         table.setBackground(CARD_BG);
         table.setForeground(TEXT_DARK);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setRowHeight(42);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setRowHeight(38);
         table.setShowHorizontalLines(true);
         table.setGridColor(new Color(0xEEEEEE));
         table.setShowVerticalLines(false);
-        table.setSelectionBackground(new Color(0xE8F0FB));
+        table.setSelectionBackground(com.saia.presentation.UITheme.PRIMARY_PALE);
         table.setSelectionForeground(TEXT_DARK);
         table.setFocusable(false);
 
@@ -238,7 +232,7 @@ public class AprendicesPanel extends JPanel {
         scroll.setBorder(null);
         scroll.getViewport().setBackground(CARD_BG);
 
-        card.add(header, BorderLayout.NORTH);
+        card.add(table.getTableHeader(), BorderLayout.NORTH);
         card.add(scroll,  BorderLayout.CENTER);
         return card;
     }
@@ -261,10 +255,11 @@ public class AprendicesPanel extends JPanel {
         // Columna Acción (índice 10)
         t.getColumnModel().getColumn(10).setCellRenderer(new AccionRenderer());
         t.getColumnModel().getColumn(10).setCellEditor(new AccionEditor(this));
-        // Anchos
-        int[] w = {35, 100, 110, 140, 140, 180, 80, 90, 70, 80, 110};
+        // Anchos: #, N°Doc, TipDoc, Nombres, Apellidos, Email, NomFicha, N°Ficha, Centro, Estado, Acción
+        int[] w = {32, 110, 65, 130, 135, 185, 120, 80, 70, 80, 115};
         for (int i = 0; i < w.length; i++) t.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
-        t.getColumnModel().getColumn(0).setMaxWidth(35);
+        t.getColumnModel().getColumn(0).setMaxWidth(32);
+        t.getColumnModel().getColumn(10).setMinWidth(112);
         return t;
     }
 

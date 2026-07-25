@@ -259,13 +259,9 @@ public class ReportesPanel extends JPanel {
         };
 
         reporteTable = new JTable(reporteModel);
-        reporteTable.getTableHeader().setBackground(new Color(0xF8F9FA));
-        reporteTable.getTableHeader().setForeground(TEXT_DARK);
-        reporteTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        reporteTable.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        reporteTable.getTableHeader().setReorderingAllowed(false);
+        com.saia.presentation.UITheme.styleTableHeader(reporteTable);
         reporteTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        reporteTable.setRowHeight(48);
+        reporteTable.setRowHeight(40);
         reporteTable.setBackground(CARD_BG);
         reporteTable.setGridColor(new Color(0xF0F0F0));
         reporteTable.setShowVerticalLines(false);

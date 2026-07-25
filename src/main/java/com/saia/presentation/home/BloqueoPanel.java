@@ -36,7 +36,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -183,24 +182,20 @@ public class BloqueoPanel extends JPanel {
             @Override public boolean isOpaque() { return false; }
         };
 
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(NAVY); header.setForeground(Color.WHITE);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setPreferredSize(new Dimension(0, 36));
-        header.setReorderingAllowed(false);
+        com.saia.presentation.UITheme.styleTableHeader(table, NAVY);
 
         table.setBackground(CARD_BG); table.setForeground(TEXT_DARK);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setRowHeight(42);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setRowHeight(38);
         table.setShowHorizontalLines(true); table.setGridColor(new Color(0xEEEEEE));
         table.setShowVerticalLines(false);
-        table.setSelectionBackground(new Color(0xE8F0FB));
+        table.setSelectionBackground(com.saia.presentation.UITheme.PRIMARY_PALE);
         table.setFocusable(false);
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(null); scroll.getViewport().setBackground(CARD_BG);
 
-        card.add(header, BorderLayout.NORTH);
+        card.add(table.getTableHeader(), BorderLayout.NORTH);
         card.add(scroll,  BorderLayout.CENTER);
         return card;
     }
@@ -222,10 +217,12 @@ public class BloqueoPanel extends JPanel {
         t.getColumnModel().getColumn(8).setCellRenderer(new HabilitarRenderer());
         t.getColumnModel().getColumn(8).setCellEditor(new HabilitarEditor(this));
         // Anchos
-        int[] w = {35, 110, 115, 150, 145, 185, 100, 145, 100};
+        // Anchos: #, N°Doc, TipDoc, Nombres, Apellidos, Email, Tel, Rol, Habilitar
+        int[] w = {32, 115, 75, 150, 150, 200, 105, 120, 110};
         for (int i = 0; i < w.length; i++)
             t.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
-        t.getColumnModel().getColumn(0).setMaxWidth(35);
+        t.getColumnModel().getColumn(0).setMaxWidth(32);
+        t.getColumnModel().getColumn(8).setMinWidth(108);
         return t;
     }
 

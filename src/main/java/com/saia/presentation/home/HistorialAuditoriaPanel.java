@@ -50,7 +50,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 
 import com.saia.business.AuditoriaService;
@@ -241,13 +240,8 @@ public class HistorialAuditoriaPanel extends JPanel {
         table.setIntercellSpacing(new Dimension(0, 0));
 
         // Header
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(NAVY);
-        header.setForeground(Color.WHITE);
-        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setPreferredSize(new Dimension(0, 38));
-        header.setReorderingAllowed(false);
-        header.setResizingAllowed(true);
+        UITheme.styleTableHeader(table, NAVY);
+        table.getTableHeader().setResizingAllowed(true);
 
         // Anchos de columna
         int[] widths = {82, 72, 140, 110, 100, 270, 120, 90};
@@ -282,7 +276,7 @@ public class HistorialAuditoriaPanel extends JPanel {
         scroll.getViewport().setBackground(CARD);
         scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-        card.add(header, BorderLayout.NORTH);
+        card.add(table.getTableHeader(), BorderLayout.NORTH);
         card.add(scroll,  BorderLayout.CENTER);
         card.add(buildPie(), BorderLayout.SOUTH);
 

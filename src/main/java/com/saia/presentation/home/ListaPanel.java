@@ -141,8 +141,8 @@ class ListaPanel extends JPanel {
             }
         });
 
-        JButton btnNuevo   = makeBtn("\u002B  Nuevo",    GREEN, Color.WHITE, 120);
-        JButton btnRefresh = makeBtn("\u21BB  Actualizar", NAVY, Color.WHITE, 120);
+        JButton btnNuevo   = makeBtn("\u002B  Nuevo",      GREEN, Color.WHITE, 110);
+        JButton btnRefresh = makeBtn("\u21BB  Actualizar", NAVY,  Color.WHITE, 120);
         btnNuevo.addActionListener(e -> parent.mostrar("REGISTRO"));
         btnRefresh.addActionListener(e -> cargarDatos());
 
@@ -171,15 +171,31 @@ class ListaPanel extends JPanel {
         JTableHeader header = table.getTableHeader();
         header.setBackground(NAVY); header.setForeground(Color.WHITE);
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setPreferredSize(new Dimension(0, 36));
+        header.setPreferredSize(new Dimension(0, 38));
         header.setReorderingAllowed(false);
 
+        // Renderer propio: garantiza texto blanco visible sobre fondo verde SENA
+        header.setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(
+                    JTable tbl, Object v, boolean sel, boolean foc, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(tbl, v, sel, foc, r, c);
+                lbl.setBackground(NAVY);
+                lbl.setForeground(Color.WHITE);
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                lbl.setBorder(new EmptyBorder(0, 10, 0, 6));
+                lbl.setOpaque(true);
+                return lbl;
+            }
+        });
+
         table.setBackground(CARD_BG);    table.setForeground(TEXT_DARK);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setRowHeight(42);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setRowHeight(38);
         table.setShowHorizontalLines(true); table.setGridColor(new Color(0xEEEEEE));
         table.setShowVerticalLines(false);
-        table.setSelectionBackground(new Color(0xE8F0FB));
+        table.setSelectionBackground(com.saia.presentation.UITheme.PRIMARY_PALE);
+        table.setSelectionForeground(TEXT_DARK);
         table.setFocusable(false);
 
         JScrollPane scroll = new JScrollPane(table);
@@ -215,11 +231,14 @@ class ListaPanel extends JPanel {
         t.getColumnModel().getColumn(11).setCellRenderer(new BloqueoRenderer());
         t.getColumnModel().getColumn(11).setCellEditor(new BloqueoEditor(parent, this));
 
-        // Anchos
-        int[] w = {35, 105, 110, 130, 120, 170, 95, 80, 130, 75, 70, 85};
+        // Anchos: #, N°Doc, TipDoc, Nombres, Apellidos, Email, Tel, Turno, Empresa, Estado, Editar, Bloqueo
+        int[] w = {32, 115, 65, 120, 130, 185, 100, 80, 145, 80, 90, 100};
         for (int i = 0; i < w.length; i++)
             t.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
-        t.getColumnModel().getColumn(0).setMaxWidth(35);
+        t.getColumnModel().getColumn(0).setMaxWidth(32);
+        // Mínimo para que los botones no se trunquen
+        t.getColumnModel().getColumn(10).setMinWidth(88);
+        t.getColumnModel().getColumn(11).setMinWidth(96);
         return t;
     }
 
