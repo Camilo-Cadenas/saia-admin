@@ -247,6 +247,63 @@ public final class UITheme {
         return btn;
     }
 
+    /**
+     * Botón sólido con color personalizado (para casos especiales).
+     * El texto siempre será blanco para garantizar legibilidad.
+     * 
+     * @param text Texto del botón
+     * @param bgColor Color de fondo del botón
+     * @return JButton configurado
+     */
+    public static JButton solidButton(String text, Color bgColor) {
+        return solidButton(text, bgColor, 140, 38);
+    }
+
+    public static JButton solidButton(String text, Color bgColor, int w, int h) {
+        Color hoverColor = bgColor.darker();
+        return makeBtn(text, bgColor, hoverColor, Color.WHITE, w, h);
+    }
+
+    /**
+     * Botón outline con color personalizado (borde de color, fondo transparente).
+     * 
+     * @param text Texto del botón
+     * @param borderColor Color del borde y texto
+     * @return JButton configurado
+     */
+    public static JButton outlineButton(String text, Color borderColor) {
+        return outlineButton(text, borderColor, 140, 38);
+    }
+
+    public static JButton outlineButton(String text, Color borderColor, int w, int h) {
+        JButton btn = new JButton(text) {
+            boolean hov;
+            { addMouseListener(new MouseAdapter() {
+                @Override public void mouseEntered(MouseEvent e) { hov = true;  repaint(); }
+                @Override public void mouseExited (MouseEvent e) { hov = false; repaint(); }
+            }); }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bgHover = new Color(
+                    borderColor.getRed(), 
+                    borderColor.getGreen(), 
+                    borderColor.getBlue(), 
+                    18
+                );
+                g2.setColor(hov ? bgHover : BG_WHITE);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth()-1, getHeight()-1, 8, 8));
+                g2.setColor(borderColor);
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth()-2, getHeight()-2, 8, 8));
+                g2.dispose(); super.paintComponent(g);
+            }
+        };
+        applyBtnBase(btn, borderColor, w, h);
+        btn.setForeground(borderColor);
+        return btn;
+    }
+
     // ── Estilos globales para componentes ─────────────────────────────────────
 
     /**
@@ -331,7 +388,7 @@ public final class UITheme {
                 lbl.setBackground(headerBg);
                 lbl.setForeground(Color.WHITE);
                 lbl.setFont(FONT_TABLE_HEADER);
-                lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
                 lbl.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createMatteBorder(0, 0, 0, 1,
                         new Color(headerBg.getRed(), headerBg.getGreen(), headerBg.getBlue(), 60)),
@@ -421,7 +478,7 @@ public final class UITheme {
 
         // JButton por defecto (botones en JOptionPane, JDialog, etc.)
         UIManager.put("Button.background",       PRIMARY);
-        UIManager.put("Button.foreground",       Color.WHITE);
+        UIManager.put("Button.foreground",       Color.BLACK);
         UIManager.put("Button.font",             FONT_BODY);
         UIManager.put("Button.focus",            new Color(0, 0, 0, 0));
         UIManager.put("Button.select",           PRIMARY_DARK);
@@ -487,7 +544,7 @@ public final class UITheme {
         // Dialogs / OptionPane
         UIManager.put("OptionPane.messageFont",  FONT_BODY);
         UIManager.put("OptionPane.buttonFont",   FONT_LABEL);
-        UIManager.put("OptionPane.messageForeground", TEXT_PRIMARY);
+        UIManager.put("OptionPane.messageForeground", Color.BLACK);
         UIManager.put("OptionPane.background",   BG_WHITE);
 
         // Spinner editor

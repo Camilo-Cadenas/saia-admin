@@ -237,8 +237,10 @@ abstract class BaseFormPanel extends JPanel {
         JButton ok     = new JButton("Aceptar");
         JButton cancel = new JButton("Cancelar");
         ok.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        ok.setBackground(NAVY); ok.setForeground(Color.WHITE);
+        ok.setBackground(NAVY); ok.setForeground(Color.BLACK);
         ok.setFocusPainted(false);
+        cancel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cancel.setForeground(Color.BLACK);
         cancel.setFocusPainted(false);
 
         ok.addActionListener(ev -> {
@@ -337,7 +339,7 @@ abstract class BaseFormPanel extends JPanel {
     }
 
     protected JPanel sectionTitle(String text, javax.swing.Icon icon) {
-        JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0)) {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0)) {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

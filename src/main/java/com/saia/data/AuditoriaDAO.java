@@ -195,6 +195,41 @@ public class AuditoriaDAO {
         return list;
     }
 
+    // ── Consulta de persona afectada ──────────────────────────────────────────
+
+    /**
+     * Obtiene el nombre completo de una persona desde la tabla persona.
+     * @param numDoc número de documento de la persona
+     * @return nombre completo "nombres p_ape s_ape" o "—" si no se encuentra
+     */
+    public String getNombrePersona(int numDoc) {
+        if (numDoc <= 0) return "—";
+        
+        String sql = "SELECT nombres, p_ape, s_ape FROM persona WHERE num_doc = ?";
+        try (Connection cn = ConnectionPool.getInstance().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, numDoc);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    StringBuilder sb = new StringBuilder();
+                    String nombres = rs.getString("nombres");
+                    String pApe = rs.getString("p_ape");
+                    String sApe = rs.getString("s_ape");
+                    
+                    if (nombres != null) sb.append(nombres.trim()).append(" ");
+                    if (pApe != null) sb.append(pApe.trim()).append(" ");
+                    if (sApe != null) sb.append(sApe.trim());
+                    
+                    String nombreCompleto = sb.toString().trim();
+                    return nombreCompleto.isEmpty() ? "—" : nombreCompleto;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[AuditoriaDAO] getNombrePersona: " + e.getMessage());
+        }
+        return "—";
+    }
+
     // ── Mapeo ─────────────────────────────────────────────────────────────────
 
     private RegistroAuditoria mapRow(ResultSet rs) throws SQLException {

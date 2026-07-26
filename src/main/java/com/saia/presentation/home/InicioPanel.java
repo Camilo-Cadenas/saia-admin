@@ -12,14 +12,21 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Optional;
 
+import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -29,8 +36,10 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
+import com.saia.business.ConfiguracionService;
 import com.saia.business.DashboardService;
 import com.saia.business.DashboardStats;
+import com.saia.data.ConfiguracionDAO.PerfilAdmin;
 import com.saia.data.DashboardDAO.ActividadItem;
 import com.saia.presentation.UITheme;
 import com.saia.presentation.components.DonutChart;
@@ -45,7 +54,6 @@ public class InicioPanel extends JPanel {
 
     // Colores — desde UITheme (paleta SENA)
     private static final Color GREEN_MID   = UITheme.PRIMARY;
-    private static final Color GREEN_PALE  = UITheme.PRIMARY_PALE;
     private static final Color BG_PAGE     = UITheme.BG_SECONDARY;
     private static final Color CARD_BG     = UITheme.BG_WHITE;
     private static final Color BORDER_C    = UITheme.BORDER;
@@ -54,6 +62,7 @@ public class InicioPanel extends JPanel {
     private static final Color TEXT_LIGHT  = UITheme.TEXT_LIGHT;
 
     private final DashboardService service = new DashboardService();
+    private final ConfiguracionService configService = new ConfiguracionService();
 
     // Etiquetas de tarjetas de stats
     private JLabel lblPersonalNum, lblPersonalActInact;
@@ -73,6 +82,51 @@ public class InicioPanel extends JPanel {
 
     // Fecha/hora
     private JLabel lblFechaHora;
+    
+    // Avatar del usuario
+    private AvatarPanel avatarPanel;
+    
+    /**
+     * Panel personalizado para mostrar el avatar del usuario con foto circular.
+     */
+    private static class AvatarPanel extends JPanel {
+        private ImageIcon userPhoto = null;
+        
+        public AvatarPanel() {
+            setOpaque(false);
+            setPreferredSize(new Dimension(56, 56));
+        }
+        
+        public void actualizarFoto(ImageIcon icon) {
+            this.userPhoto = icon;
+            repaint();
+        }
+        
+        @Override 
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            if (userPhoto != null) {
+                // Dibujar foto circular
+                g2.setClip(new Ellipse2D.Float(4, 4, 48, 48));
+                g2.drawImage(userPhoto.getImage(), 4, 4, 48, 48, null);
+                g2.setClip(null);
+                // Borde del círculo
+                g2.setColor(UITheme.PRIMARY);
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawOval(4, 4, 48, 48);
+            } else {
+                // Ícono genérico si no hay foto
+                g2.setColor(UITheme.PRIMARY_PALE);
+                g2.fillOval(4, 4, 48, 48);
+                g2.setColor(UITheme.PRIMARY);
+                g2.fillOval(18, 12, 20, 20);
+                g2.fillArc(13, 32, 30, 22, 0, 180);
+            }
+            g2.dispose();
+        }
+    }
 
     public InicioPanel() {
         setLayout(new BorderLayout());
@@ -115,29 +169,12 @@ public class InicioPanel extends JPanel {
         p.setLayout(new BorderLayout());
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
-        // Icono persona
-        JLabel ico = new JLabel();
-        ico.setPreferredSize(new Dimension(48, 48));
-        ico.setBorder(new EmptyBorder(0, 14, 0, 14));
-
-        JPanel icoWrapper = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(GREEN_PALE);
-                g2.fillOval(4, 4, 40, 40);
-                g2.setColor(GREEN_MID);
-                g2.fillOval(16, 10, 16, 16);
-                g2.fillArc(11, 28, 26, 18, 0, 180);
-                g2.dispose();
-            }
-        };
-        icoWrapper.setOpaque(false);
-        icoWrapper.setPreferredSize(new Dimension(52, 52));
+        // Avatar con foto del usuario
+        avatarPanel = new AvatarPanel();
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         left.setOpaque(false);
-        left.add(icoWrapper);
+        left.add(avatarPanel);
 
         JPanel txt = new JPanel();
         txt.setLayout(new BoxLayout(txt, BoxLayout.Y_AXIS));
@@ -417,6 +454,10 @@ public class InicioPanel extends JPanel {
     // ── Carga de datos (SwingWorker) ──────────────────────────────────────────
 
     public void loadDataAsync() {
+        // Cargar foto del usuario
+        cargarFotoUsuario();
+        
+        // Cargar estadísticas del dashboard
         SwingWorker<DashboardStats, Void> worker = new SwingWorker<>() {
             @Override
             protected DashboardStats doInBackground() {
@@ -434,6 +475,51 @@ public class InicioPanel extends JPanel {
             }
         };
         worker.execute();
+    }
+    
+    /**
+     * Carga la foto del usuario desde el perfil en la base de datos.
+     */
+    private void cargarFotoUsuario() {
+        int numDoc = SessionManager.getInstance().getAdmin().getNumDoc();
+        
+        new SwingWorker<ImageIcon, Void>() {
+            @Override
+            protected ImageIcon doInBackground() {
+                Optional<PerfilAdmin> perfilOpt = configService.cargarPerfil(numDoc);
+                if (perfilOpt.isEmpty()) return null;
+                
+                String rutaFoto = perfilOpt.get().fotoPerfil();
+                if (rutaFoto == null || rutaFoto.isBlank()) return null;
+                
+                try {
+                    File f = new File(rutaFoto);
+                    if (!f.exists()) return null;
+                    
+                    BufferedImage img = ImageIO.read(f);
+                    if (img == null) return null;
+                    
+                    Image scaled = img.getScaledInstance(48, 48, Image.SCALE_SMOOTH);
+                    return new ImageIcon(scaled);
+                } catch (Exception e) {
+                    System.err.println("[InicioPanel] Error cargando foto: " + e.getMessage());
+                    return null;
+                }
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    ImageIcon icon = get();
+                    if (icon != null && avatarPanel != null) {
+                        avatarPanel.actualizarFoto(icon);
+                    }
+                } catch (InterruptedException | java.util.concurrent.ExecutionException ex) {
+                    System.err.println("[InicioPanel] Error obteniendo foto: " + ex.getMessage());
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }.execute();
     }
 
     private void applyStats(DashboardStats s) {

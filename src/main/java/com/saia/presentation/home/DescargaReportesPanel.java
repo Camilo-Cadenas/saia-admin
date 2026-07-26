@@ -48,7 +48,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 
 import com.saia.business.ReporteExportService;
 import com.saia.data.GeneradorReportesDAO;
@@ -73,9 +72,6 @@ public class DescargaReportesPanel extends JPanel {
     static final Color BORDER   = UITheme.BORDER;
     static final Color TXT_D    = UITheme.TEXT_PRIMARY;
     static final Color TXT_G    = UITheme.TEXT_SECONDARY;
-    static final Color C_GREEN  = UITheme.SECONDARY;
-    static final Color C_BLUE   = UITheme.PRIMARY;
-    static final Color NAVY     = UITheme.PRIMARY;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -143,9 +139,9 @@ public class DescargaReportesPanel extends JPanel {
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         left.setOpaque(false);
-        JLabel ico = new JLabel("ℹ");
-        ico.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
-        ico.setForeground(new Color(0x2563EB));
+        JLabel ico = new JLabel();
+        ico.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.INFO_CIRCLE, 20, new Color(0x2563EB)));
 
         JPanel txt = new JPanel();
         txt.setLayout(new BoxLayout(txt, BoxLayout.Y_AXIS));
@@ -161,12 +157,13 @@ public class DescargaReportesPanel extends JPanel {
 
         left.add(ico); left.add(txt);
 
-        JButton btnX = new JButton("✕");
-        btnX.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnX.setForeground(new Color(0x6B7280));
+        JButton btnX = new JButton();
+        btnX.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TIMES, 14, new Color(0x6B7280)));
         btnX.setOpaque(false); btnX.setContentAreaFilled(false);
         btnX.setBorderPainted(false); btnX.setFocusPainted(false);
         btnX.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnX.setPreferredSize(new Dimension(32, 32));
         btnX.addActionListener(e -> {
             p.setVisible(false);
             p.getParent().revalidate();
@@ -279,10 +276,16 @@ public class DescargaReportesPanel extends JPanel {
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
 
-        btnPreview = outlineBtn("👁  Vista previa", C_BLUE);
+        // Color azul para Vista previa
+        btnPreview = UITheme.outlineButton("  Vista previa", new Color(0x0D47A1), 140, 38);
+        btnPreview.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 14, new Color(0x0D47A1)));
         btnPreview.addActionListener(e -> onVistaPrevia());
 
-        btnDescargar = solidBtn("⬇  Descargar reporte", C_GREEN);
+        // Color verde oscuro para Descargar
+        btnDescargar = UITheme.solidButton("  Descargar reporte", new Color(0x1B5E20), 170, 38);
+        btnDescargar.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.DOWNLOAD, 14, Color.WHITE));
         btnDescargar.setEnabled(false);
         btnDescargar.addActionListener(e -> onDescargarReporte());
 
@@ -398,7 +401,9 @@ public class DescargaReportesPanel extends JPanel {
             }
             @Override protected void done() {
                 btnDescargar.setEnabled(true);
-                btnDescargar.setText("⬇  Descargar reporte");
+                btnDescargar.setText("  Descargar reporte");
+                btnDescargar.setIcon(com.saia.presentation.IconUtil.icon(
+                    org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.DOWNLOAD, 14, Color.WHITE));
                 try {
                     File archivo = get();
                     int resp = JOptionPane.showConfirmDialog(DescargaReportesPanel.this,
@@ -409,7 +414,12 @@ public class DescargaReportesPanel extends JPanel {
                         JOptionPane.INFORMATION_MESSAGE);
                     if (resp == JOptionPane.YES_OPTION && Desktop.isDesktopSupported())
                         Desktop.getDesktop().open(archivo.getParentFile());
-                } catch (Exception ex) {
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    JOptionPane.showMessageDialog(DescargaReportesPanel.this,
+                        "Error al generar el reporte:\n" + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                } catch (ExecutionException | java.io.IOException ex) {
                     JOptionPane.showMessageDialog(DescargaReportesPanel.this,
                         "Error al generar el reporte:\n" + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
@@ -484,7 +494,7 @@ public class DescargaReportesPanel extends JPanel {
         p.add(head, BorderLayout.NORTH);
 
         // Tabla
-        String[] colArr = cols.toArray(new String[0]);
+        String[] colArr = cols.toArray(String[]::new);
         DefaultTableModel model = new DefaultTableModel(colArr, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -527,7 +537,9 @@ public class DescargaReportesPanel extends JPanel {
         // Footer del diálogo
         JPanel foot = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         foot.setOpaque(false);
-        JButton close = solidBtn("  Cerrar  ", new Color(0x64748B));
+        JButton close = UITheme.solidButton("  Cerrar  ", new Color(0x64748B), 120, 36);
+        close.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TIMES, 14, Color.WHITE));
         close.addActionListener(e ->
             SwingUtilities.getWindowAncestor((Component) e.getSource()).dispose());
         foot.add(close);
@@ -603,7 +615,8 @@ public class DescargaReportesPanel extends JPanel {
     }
 
     private JComboBox<String> comboBox(List<String> items) {
-        JComboBox<String> c = new JComboBox<>(items.toArray(new String[0]));
+        String[] array = items.toArray(String[]::new);
+        JComboBox<String> c = new JComboBox<>(array);
         c.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         c.setBackground(Color.WHITE);
         c.setPreferredSize(new Dimension(0, 32));
@@ -616,62 +629,14 @@ public class DescargaReportesPanel extends JPanel {
         JLabel lbl = new JLabel(" ");
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         p.add(lbl, BorderLayout.NORTH);
-        JButton btn = outlineBtn("↺  Limpiar filtros", new Color(0x64748B));
+        JButton btn = UITheme.outlineButton("  Limpiar filtros", new Color(0x64748B), 150, 32);
+        btn.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.REDO, 14, new Color(0x64748B)));
         btn.addActionListener(e -> onLimpiarFiltros());
         btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         btn.setPreferredSize(new Dimension(0, 32));
         p.add(btn, BorderLayout.CENTER);
         return p;
-    }
-
-    private static JButton solidBtn(String text, Color bg) {
-        JButton b = new JButton(text) {
-            boolean hov;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)  { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hov ? bg.darker() : bg);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth()-1, getHeight()-1, 8, 8));
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        b.setForeground(Color.WHITE); b.setOpaque(false);
-        b.setContentAreaFilled(false); b.setBorderPainted(false); b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(170, 38));
-        return b;
-    }
-
-    private static JButton outlineBtn(String text, Color accent) {
-        JButton b = new JButton(text) {
-            boolean hov;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)  { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                Color bg = hov ? new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 18)
-                               : Color.WHITE;
-                g2.setColor(bg);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth()-1, getHeight()-1, 8, 8));
-                g2.setColor(accent); g2.setStroke(new BasicStroke(1.5f));
-                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth()-2, getHeight()-2, 8, 8));
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        b.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        b.setForeground(accent); b.setOpaque(false);
-        b.setContentAreaFilled(false); b.setBorderPainted(false); b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(155, 38));
-        return b;
     }
 
     private static Component vgap(int h) { return Box.createVerticalStrut(h); }
@@ -697,13 +662,11 @@ public class DescargaReportesPanel extends JPanel {
     static class TarjetaTipo extends JPanel {
         private boolean selected = false;
         private boolean hovered  = false;
-        private final TipoReporte tipo;
 
         private static final Color SEL_BORDER = new Color(0x059669);
         private static final Color SEL_BG     = new Color(0xF0FDF4);
 
         TarjetaTipo(TipoReporte tipo) {
-            this.tipo = tipo;
             setLayout(new BorderLayout(0, 6));
             setOpaque(false);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -762,7 +725,6 @@ public class DescargaReportesPanel extends JPanel {
         }
 
         void setSelected(boolean v) { selected = v; repaint(); }
-        boolean isSelected() { return selected; }
 
         @Override protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -811,7 +773,6 @@ public class DescargaReportesPanel extends JPanel {
     static class TarjetaFormato extends JPanel {
         private boolean selected = false;
         private boolean hovered  = false;
-        private final FormatoDescarga formato;
 
         private static final Color SEL_BORDER = new Color(0x059669);
         private static final Color SEL_BG     = new Color(0xF0FDF4);
@@ -824,7 +785,6 @@ public class DescargaReportesPanel extends JPanel {
         );
 
         TarjetaFormato(FormatoDescarga formato) {
-            this.formato = formato;
             setLayout(new BorderLayout(8, 0));
             setOpaque(false);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

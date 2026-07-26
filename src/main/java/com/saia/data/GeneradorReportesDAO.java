@@ -268,7 +268,7 @@ public class GeneradorReportesDAO {
             String numStr = g.contains("-") ? g.substring(g.lastIndexOf("-") + 1).trim() : g.trim();
             if (numStr.matches("\\d+")) {
                 sql.append(" AND ps.num_doc = ? ");
-                params.add(Integer.parseInt(numStr));
+                params.add(numStr);
             }
         }
         sql.append(" ORDER BY p.p_ape, p.nombres");

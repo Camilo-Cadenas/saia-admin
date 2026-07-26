@@ -12,8 +12,8 @@ public class RegistroAuditoria {
         CREACION   ("Creación",     0x059669, 0xD1FAE5),  // verde
         MODIFICACION("Modificación", 0xD97706, 0xFEF3C7), // amarillo-naranja
         ELIMINACION("Eliminación",  0xDC2626, 0xFEE2E2),  // rojo
-        BLOQUEAR   ("Bloquear",     0x7C3AED, 0xEDE9FE),  // morado
-        HABILITAR  ("Habilitar",    0x0891B2, 0xCFFAFE),  // cyan
+        BLOQUEAR   ("Bloqueado",    0x7C3AED, 0xEDE9FE),  // morado
+        HABILITAR  ("Habilitado",   0x0891B2, 0xCFFAFE),  // cyan
         OTRO       ("Otro",         0x6B7280, 0xF3F4F6);  // gris
 
         public final String label;

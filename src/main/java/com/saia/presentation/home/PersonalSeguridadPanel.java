@@ -29,8 +29,6 @@ public class PersonalSeguridadPanel extends JPanel {
     static final Color BORDER_C   = UITheme.BORDER;
     static final Color BORDER_ERR = UITheme.ERROR;
     static final Color TEXT_DARK  = UITheme.TEXT_PRIMARY;
-    @SuppressWarnings("unused")
-    static final Color TEXT_GRAY  = UITheme.TEXT_SECONDARY;
     static final Color BTN_CANCEL = new Color(0x6C757D);
 
     // ── Cards ─────────────────────────────────────────────────────────────────

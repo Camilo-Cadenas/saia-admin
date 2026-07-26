@@ -17,7 +17,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -36,24 +35,19 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import javax.swing.Timer;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
 import com.saia.business.AuditoriaService;
-import com.saia.business.AuditoriaService.PaginaAuditoria;
 import com.saia.model.RegistroAuditoria;
 import com.saia.model.RegistroAuditoria.Accion;
 import com.saia.presentation.UITheme;
@@ -72,38 +66,25 @@ public class HistorialAuditoriaPanel extends JPanel {
     private static final Color TXT_G  = UITheme.TEXT_SECONDARY;
     private static final Color NAVY   = UITheme.PRIMARY;
     private static final Color BLUE   = UITheme.PRIMARY;
-    private static final Color GREEN  = UITheme.SECONDARY;
-
-    private static final int PAGE_SIZE = AuditoriaService.PAGE_SIZE;
 
     private static final String[] COLS = {
         "Fecha", "Hora", "Usuario", "Acción", "Entidad", "Descripción", "Módulo", "Detalle"
     };
 
-    private static final DateTimeFormatter FMT_FULL =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
     // ── Servicio ──────────────────────────────────────────────────────────────
     private final AuditoriaService service = new AuditoriaService();
 
     // ── Estado ────────────────────────────────────────────────────────────────
-    private int paginaActual = 0;
-    private int totalRegistros = 0;
-    private int totalPaginas = 1;
-    private final List<RegistroAuditoria> paginaData = new ArrayList<>();
+    private final List<RegistroAuditoria> todosRegistros = new ArrayList<>();
 
     // ── Filtros ───────────────────────────────────────────────────────────────
     private JSpinner  spDesde, spHasta;
     private JComboBox<String> cmbAccion, cmbEntidad;
-    private JTextField txtBuscar;
 
     // ── Tabla ─────────────────────────────────────────────────────────────────
     private DefaultTableModel tableModel;
     private JTable            table;
-
-    // ── Paginación ────────────────────────────────────────────────────────────
-    private JLabel  lblConteo;
-    private JPanel  paginacionBox;
+    private JLabel            lblConteo;
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public HistorialAuditoriaPanel() {
@@ -148,7 +129,9 @@ public class HistorialAuditoriaPanel extends JPanel {
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
 
-        JLabel titulo = new JLabel("🗂  Historial de Auditoría");
+        JLabel titulo = new JLabel("  Historial de Auditoría");
+        titulo.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.HISTORY, 20, TXT_D));
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titulo.setForeground(TXT_D);
 
@@ -165,49 +148,58 @@ public class HistorialAuditoriaPanel extends JPanel {
     // ── Filtros ───────────────────────────────────────────────────────────────
     private JPanel buildFiltros() {
         JPanel card = card();
-        card.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
+        card.setLayout(new FlowLayout(FlowLayout.LEFT, 12, 12));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 62));
+        card.setBorder(new EmptyBorder(2, 6, 2, 6));
 
         // Fecha desde
         card.add(boldLabel("Desde:"));
         spDesde = dateSpinner(LocalDate.now().withDayOfMonth(1));
         card.add(spDesde);
 
+        // Espacio
+        card.add(Box.createHorizontalStrut(8));
+
         // Fecha hasta
         card.add(boldLabel("Hasta:"));
         spHasta = dateSpinner(LocalDate.now());
         card.add(spHasta);
 
+        // Espacio
+        card.add(Box.createHorizontalStrut(8));
+
         // Acción
         card.add(boldLabel("Acción:"));
-        cmbAccion = combo(new String[]{"Todas"}, 130);
+        cmbAccion = combo(new String[]{"Todas"}, 160);
         card.add(cmbAccion);
+
+        // Espacio
+        card.add(Box.createHorizontalStrut(8));
 
         // Entidad / Módulo
         card.add(boldLabel("Módulo:"));
-        cmbEntidad = combo(new String[]{"Todas"}, 130);
+        cmbEntidad = combo(new String[]{"Todas"}, 160);
         card.add(cmbEntidad);
 
-        // Búsqueda libre
-        txtBuscar = searchField();
-        card.add(txtBuscar);
+        // Espacio flexible para empujar los botones a la derecha
+        card.add(Box.createHorizontalStrut(20));
 
         // Botón limpiar
-        JButton btnLimpiar = outlineBtn("⧳  Limpiar filtros", new Color(0x64748B));
+        JButton btnLimpiar = UITheme.outlineButton("  Limpiar filtros", new Color(0x64748B), 150, 32);
+        btnLimpiar.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.REDO, 14, new Color(0x64748B)));
         btnLimpiar.addActionListener(e -> limpiarFiltros());
         card.add(btnLimpiar);
 
-        // Botón buscar
-        JButton btnBuscar = solidBtn("🔍  Buscar", BLUE);
-        btnBuscar.addActionListener(e -> { paginaActual = 0; buscar(); });
-        card.add(btnBuscar);
+        // Espacio entre botones
+        card.add(Box.createHorizontalStrut(6));
 
-        // Buscar al escribir (con debounce liviano)
-        txtBuscar.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { scheduleSearch(); }
-            @Override public void removeUpdate(DocumentEvent e) { scheduleSearch(); }
-            @Override public void changedUpdate(DocumentEvent e) {}
-        });
+        // Botón buscar
+        JButton btnBuscar = UITheme.solidButton("  Buscar", BLUE, 110, 32);
+        btnBuscar.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SEARCH, 14, Color.WHITE));
+        btnBuscar.addActionListener(e -> buscar());
+        card.add(btnBuscar);
 
         return card;
     }
@@ -257,11 +249,12 @@ public class HistorialAuditoriaPanel extends JPanel {
         table.getColumnModel().getColumn(7).setCellRenderer(new DetalleRenderer());
         table.getColumnModel().getColumn(7).setCellEditor(new DetalleEditor(this));
 
-        // Renderer por defecto con padding
+        // Renderer por defecto con padding y centrado
         DefaultTableCellRenderer defRender = new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 Component comp = super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+                setHorizontalAlignment(SwingConstants.CENTER);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
                 if (!sel) comp.setBackground(r % 2 == 0 ? CARD : new Color(0xF8FAFC));
                 return comp;
@@ -278,30 +271,23 @@ public class HistorialAuditoriaPanel extends JPanel {
 
         card.add(table.getTableHeader(), BorderLayout.NORTH);
         card.add(scroll,  BorderLayout.CENTER);
-        card.add(buildPie(), BorderLayout.SOUTH);
 
-        outer.add(card, BorderLayout.CENTER);
-        return outer;
-    }
-
-    // ── Pie de paginación ─────────────────────────────────────────────────────
-    private JPanel buildPie() {
-        JPanel p = new JPanel(new BorderLayout(10, 0));
-        p.setBackground(new Color(0xFAFAFA));
-        p.setBorder(BorderFactory.createCompoundBorder(
+        // Pie con contador de registros
+        JPanel pie = new JPanel(new BorderLayout());
+        pie.setBackground(new Color(0xFAFAFA));
+        pie.setBorder(BorderFactory.createCompoundBorder(
             new MatteBorder(1, 0, 0, 0, BORDER),
             new EmptyBorder(8, 14, 8, 14)));
 
         lblConteo = new JLabel("Cargando…");
         lblConteo.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         lblConteo.setForeground(TXT_G);
+        pie.add(lblConteo, BorderLayout.WEST);
 
-        paginacionBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        paginacionBox.setOpaque(false);
+        card.add(pie, BorderLayout.SOUTH);
 
-        p.add(lblConteo,    BorderLayout.WEST);
-        p.add(paginacionBox, BorderLayout.EAST);
-        return p;
+        outer.add(card, BorderLayout.CENTER);
+        return outer;
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -324,54 +310,40 @@ public class HistorialAuditoriaPanel extends JPanel {
         }.execute();
     }
 
-    /** Aplica los filtros actuales y recarga desde página 0. */
-    private void aplicarFiltros() {
-        paginaActual = 0;
-        buscar();
-    }
-
     /** Resetea todos los filtros a valores por defecto. */
     private void limpiarFiltros() {
         setSpinnerDate(spDesde, LocalDate.now().withDayOfMonth(1));
         setSpinnerDate(spHasta, LocalDate.now());
         cmbAccion.setSelectedIndex(0);
         cmbEntidad.setSelectedIndex(0);
-        txtBuscar.setText("");
-        paginaActual = 0;
         buscar();
     }
 
-    /** Ejecuta la búsqueda asíncrona. */
+    /** Ejecuta la búsqueda asíncrona de todos los registros. */
     void buscar() {
         LocalDate desde  = getSpinnerDate(spDesde);
         LocalDate hasta  = getSpinnerDate(spHasta);
         String accion    = comboVal(cmbAccion);
         String entidad   = comboVal(cmbEntidad);
-        String texto     = txtBuscar.getText().trim();
-        final int pag    = paginaActual;
 
         tableModel.setRowCount(0);
         tableModel.addRow(new Object[]{"Cargando…","","","","","","",null});
         lblConteo.setText("Cargando…");
 
-        new SwingWorker<PaginaAuditoria, Void>() {
-            @Override protected PaginaAuditoria doInBackground() {
-                return service.buscar(desde, hasta, accion, entidad,
-                        texto.isEmpty() ? null : texto, pag);
+        new SwingWorker<List<RegistroAuditoria>, Void>() {
+            @Override protected List<RegistroAuditoria> doInBackground() {
+                return service.buscarTodos(desde, hasta, accion, entidad, null);
             }
             @Override protected void done() {
                 try {
-                    PaginaAuditoria res = get();
-                    paginaData.clear();
-                    paginaData.addAll(res.registros());
-                    totalRegistros = res.totalRegistros();
-                    totalPaginas   = res.totalPaginas();
-                    paginaActual   = res.paginaActual();
+                    List<RegistroAuditoria> registros = get();
+                    todosRegistros.clear();
+                    todosRegistros.addAll(registros);
                     poblarTabla();
-                    actualizarPaginacion();
                 } catch (InterruptedException | ExecutionException ex) {
                     tableModel.setRowCount(0);
                     tableModel.addRow(new Object[]{"Error al cargar","","","","","","",null});
+                    lblConteo.setText("Error al cargar registros.");
                     Thread.currentThread().interrupt();
                 }
             }
@@ -380,12 +352,12 @@ public class HistorialAuditoriaPanel extends JPanel {
 
     private void poblarTabla() {
         tableModel.setRowCount(0);
-        if (paginaData.isEmpty()) {
+        if (todosRegistros.isEmpty()) {
             tableModel.addRow(new Object[]{"Sin resultados","","","","","","",null});
             lblConteo.setText("No se encontraron registros.");
             return;
         }
-        for (RegistroAuditoria r : paginaData) {
+        for (RegistroAuditoria r : todosRegistros) {
             tableModel.addRow(new Object[]{
                 r.getFechaStr(),
                 r.getHoraStr(),
@@ -397,59 +369,16 @@ public class HistorialAuditoriaPanel extends JPanel {
                 r                       // Detalle — editor usa el objeto completo
             });
         }
-        int desde = paginaActual * PAGE_SIZE + 1;
-        int hasta = Math.min(desde + paginaData.size() - 1, totalRegistros);
-        lblConteo.setText("Mostrando " + desde + " a " + hasta +
-                " de " + totalRegistros + " registros");
-    }
-
-    private void actualizarPaginacion() {
-        paginacionBox.removeAll();
-
-        // Flecha anterior
-        JButton prev = pageArrow("‹");
-        prev.setEnabled(paginaActual > 0);
-        prev.addActionListener(e -> cambiarPagina(paginaActual - 1));
-        paginacionBox.add(prev);
-
-        // Números de página con elipsis
-        List<Integer> pagNums = calcularPaginas(paginaActual, totalPaginas);
-        int prev_ = -1;
-        for (int pg : pagNums) {
-            if (prev_ != -1 && pg - prev_ > 1) {
-                JLabel dots = new JLabel("…");
-                dots.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                dots.setForeground(TXT_G);
-                dots.setBorder(new EmptyBorder(0, 4, 0, 4));
-                paginacionBox.add(dots);
-            }
-            paginacionBox.add(pageBtn(pg, pg == paginaActual));
-            prev_ = pg;
-        }
-
-        // Flecha siguiente
-        JButton next = pageArrow("›");
-        next.setEnabled(paginaActual < totalPaginas - 1);
-        next.addActionListener(e -> cambiarPagina(paginaActual + 1));
-        paginacionBox.add(next);
-
-        paginacionBox.revalidate();
-        paginacionBox.repaint();
-    }
-
-    /** Cambia a la página indicada y recarga. */
-    void cambiarPagina(int pagina) {
-        paginaActual = pagina;
-        buscar();
+        lblConteo.setText("Mostrando " + todosRegistros.size() + " registros");
     }
 
     /** Muestra el diálogo de detalle. */
     void verDetalle(RegistroAuditoria r) {
         Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
-        JDialog dlg = new JDialog(owner, "Detalle del registro #" + r.getIdActividad(), true);
-        dlg.setSize(520, 380);
+        JDialog dlg = new JDialog(owner, "Detalle del Registro de Auditoría", true);
+        dlg.setSize(750, 650);
         dlg.setLocationRelativeTo(this);
-        dlg.setResizable(false);
+        dlg.setResizable(true);
         dlg.add(buildDetalleContent(r));
         dlg.setVisible(true);
     }
@@ -460,79 +389,199 @@ public class HistorialAuditoriaPanel extends JPanel {
     // ═════════════════════════════════════════════════════════════════════════
 
     private JPanel buildDetalleContent(RegistroAuditoria r) {
-        JPanel p = new JPanel(new BorderLayout(0, 12));
+        JPanel p = new JPanel(new BorderLayout(0, 16));
         p.setBackground(BG);
-        p.setBorder(new EmptyBorder(20, 24, 16, 24));
+        p.setBorder(new EmptyBorder(24, 28, 20, 28));
 
-        // Título con badge de acción
-        JPanel headRow = new JPanel(new BorderLayout(12, 0));
-        headRow.setOpaque(false);
-        JLabel titulo = new JLabel("Registro de Auditoría  #" + r.getIdActividad());
-        titulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        // === ENCABEZADO ===
+        JPanel header = new JPanel(new BorderLayout(0, 8));
+        header.setOpaque(false);
+        
+        // Fila 1: Título con badge
+        JPanel titleRow = new JPanel(new BorderLayout(12, 0));
+        titleRow.setOpaque(false);
+        
+        JLabel titulo = new JLabel("Registro de Auditoría #" + r.getIdActividad());
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titulo.setForeground(NAVY);
+        titulo.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.FILE_ALT, 18, NAVY));
+        
         JLabel badge = makeBadge(r.getAccion());
-        headRow.add(titulo, BorderLayout.CENTER);
-        headRow.add(badge,  BorderLayout.EAST);
-        p.add(headRow, BorderLayout.NORTH);
+        
+        titleRow.add(titulo, BorderLayout.CENTER);
+        titleRow.add(badge, BorderLayout.EAST);
+        
+        // Fila 2: Fecha y hora con icono
+        JLabel fechaHora = new JLabel(r.getFechaHoraStr());
+        fechaHora.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        fechaHora.setForeground(TXT_G);
+        fechaHora.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CLOCK, 12, TXT_G));
+        
+        header.add(titleRow, BorderLayout.NORTH);
+        header.add(fechaHora, BorderLayout.CENTER);
+        
+        p.add(header, BorderLayout.NORTH);
 
-        // Campos
-        JPanel fields = new JPanel(new GridLayout(0, 2, 12, 8));
-        fields.setBackground(CARD);
-        fields.setBorder(new CompoundBorder(
-            new LineBorder(BORDER, 1, true),
-            new EmptyBorder(14, 16, 14, 16)));
-
-        addField(fields, "Fecha y hora",    r.getFechaHoraStr());
-        addField(fields, "Usuario",         r.getUsuario() + "  (N° doc: " + r.getNumDocUsuario() + ")");
-        addField(fields, "Acción",          r.getAccion().label);
-        addField(fields, "Entidad",         r.getEntidad());
-        addField(fields, "Módulo",          r.getModulo());
-        addField(fields, "Doc. afectado",   r.getNumDocAfectado() > 0 ? String.valueOf(r.getNumDocAfectado()) : "—");
-
-        // Descripción (ancho completo)
-        JLabel dKey = new JLabel("Descripción:");
-        dKey.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        dKey.setForeground(TXT_G);
-
-        JTextArea dVal = new JTextArea(r.getDescripcion());
-        dVal.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        dVal.setForeground(TXT_D);
-        dVal.setEditable(false);
-        dVal.setOpaque(false);
-        dVal.setLineWrap(true);
-        dVal.setWrapStyleWord(true);
-        dVal.setBorder(null);
-
-        JPanel descBlock = new JPanel(new BorderLayout());
-        descBlock.setBackground(CARD);
-        descBlock.add(dKey, BorderLayout.NORTH);
-        descBlock.add(dVal, BorderLayout.CENTER);
-
-        JPanel body = new JPanel(new BorderLayout(0, 10));
+        // === CUERPO ===
+        JPanel body = new JPanel();
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         body.setOpaque(false);
-        body.add(fields,    BorderLayout.NORTH);
-        body.add(descBlock, BorderLayout.CENTER);
-        p.add(body, BorderLayout.CENTER);
 
-        // Pie
-        JPanel foot = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // Sección: Información del Administrador
+        body.add(buildSeccion("Administrador que realizó la acción", 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_SHIELD));
+        body.add(vgap(8));
+        
+        JPanel adminCard = infoCard();
+        adminCard.setLayout(new GridLayout(3, 2, 16, 12));
+        addInfoField(adminCard, "Nombre completo", r.getUsuario());
+        addInfoField(adminCard, "N° de Documento", String.valueOf(r.getNumDocUsuario()));
+        addInfoField(adminCard, "Rol en el sistema", "Administrador SAIA");
+        addInfoField(adminCard, "Fecha de la acción", r.getFechaStr());
+        addInfoField(adminCard, "Hora de la acción", r.getHoraStr());
+        addInfoField(adminCard, "Módulo utilizado", r.getModulo());
+        body.add(adminCard);
+        body.add(vgap(18));
+
+        // Sección: Información de la Persona Afectada
+        if (r.getNumDocAfectado() > 0) {
+            body.add(buildSeccion("Persona afectada por la acción", 
+                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER));
+            body.add(vgap(8));
+            
+            JPanel afectadoCard = infoCard();
+            afectadoCard.setLayout(new GridLayout(2, 2, 16, 12));
+            
+            // Obtener nombre desde la base de datos
+            String nombreAfectado = service.getNombrePersona(r.getNumDocAfectado());
+            
+            addInfoField(afectadoCard, "N° de Documento", String.valueOf(r.getNumDocAfectado()));
+            addInfoField(afectadoCard, "Nombre", nombreAfectado);
+            addInfoField(afectadoCard, "Tipo de usuario", r.getEntidad());
+            addInfoField(afectadoCard, "Estado actual", 
+                r.getAccion() == Accion.BLOQUEAR ? "Cuenta Bloqueada" : 
+                r.getAccion() == Accion.HABILITAR ? "Cuenta Activa" : "—");
+            
+            body.add(afectadoCard);
+            body.add(vgap(18));
+        }
+
+        // Sección: Detalles de la Acción
+        body.add(buildSeccion("Detalles de la operación", 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TASKS));
+        body.add(vgap(8));
+        
+        JPanel accionCard = infoCard();
+        accionCard.setLayout(new GridLayout(2, 2, 16, 12));
+        addInfoField(accionCard, "Tipo de acción", r.getAccion().label);
+        addInfoField(accionCard, "Entidad modificada", r.getEntidad());
+        addInfoField(accionCard, "Módulo del sistema", r.getModulo());
+        addInfoField(accionCard, "ID del registro", "#" + r.getIdActividad());
+        body.add(accionCard);
+        body.add(vgap(18));
+
+        // Sección: Descripción Detallada
+        body.add(buildSeccion("Descripción completa de la acción", 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.ALIGN_LEFT));
+        body.add(vgap(8));
+        
+        JPanel descCard = infoCard();
+        descCard.setLayout(new BorderLayout());
+        
+        JTextArea descArea = new JTextArea(r.getDescripcion());
+        descArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        descArea.setForeground(TXT_D);
+        descArea.setBackground(CARD);
+        descArea.setEditable(false);
+        descArea.setLineWrap(true);
+        descArea.setWrapStyleWord(true);
+        descArea.setBorder(new EmptyBorder(8, 8, 8, 8));
+        descArea.setRows(3);
+        
+        JScrollPane descScroll = new JScrollPane(descArea);
+        descScroll.setBorder(null);
+        descScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        descScroll.setPreferredSize(new Dimension(0, 90));
+        
+        descCard.add(descScroll, BorderLayout.CENTER);
+        body.add(descCard);
+
+        JScrollPane bodyScroll = new JScrollPane(body);
+        bodyScroll.setBorder(null);
+        bodyScroll.getViewport().setBackground(BG);
+        bodyScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        
+        p.add(bodyScroll, BorderLayout.CENTER);
+
+        // === PIE ===
+        JPanel foot = new JPanel(new BorderLayout());
         foot.setOpaque(false);
-        JButton close = solidBtn("  Cerrar  ", NAVY);
+        foot.setBorder(new EmptyBorder(10, 0, 0, 0));
+        
+        // Info adicional a la izquierda
+        JLabel infoRegistro = new JLabel("Registro guardado en el sistema de auditoría SAIA");
+        infoRegistro.setFont(new Font("Segoe UI", Font.ITALIC, 10));
+        infoRegistro.setForeground(TXT_G);
+        infoRegistro.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.INFO_CIRCLE, 10, TXT_G));
+        
+        // Botón cerrar a la derecha
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        btnPanel.setOpaque(false);
+        
+        JButton close = UITheme.solidButton("  Cerrar  ", NAVY, 120, 36);
+        close.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TIMES, 14, Color.WHITE));
         close.addActionListener(e ->
             SwingUtilities.getWindowAncestor((Component) e.getSource()).dispose());
-        foot.add(close);
+        btnPanel.add(close);
+        
+        foot.add(infoRegistro, BorderLayout.WEST);
+        foot.add(btnPanel, BorderLayout.EAST);
+        
         p.add(foot, BorderLayout.SOUTH);
+        
         return p;
     }
 
-    private void addField(JPanel p, String key, String val) {
-        JLabel k = new JLabel(key + ":");
-        k.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        k.setForeground(TXT_G);
-        JLabel v = new JLabel(val);
-        v.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        v.setForeground(TXT_D);
-        p.add(k); p.add(v);
+    private JLabel buildSeccion(String titulo, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid icono) {
+        JLabel lbl = new JLabel("  " + titulo);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setForeground(NAVY);
+        lbl.setIcon(com.saia.presentation.IconUtil.icon(icono, 14, NAVY));
+        lbl.setAlignmentX(LEFT_ALIGNMENT);
+        return lbl;
+    }
+
+    private JPanel infoCard() {
+        JPanel card = new JPanel();
+        card.setBackground(CARD);
+        card.setBorder(new CompoundBorder(
+            new LineBorder(BORDER, 1, true),
+            new EmptyBorder(16, 18, 16, 18)));
+        card.setAlignmentX(LEFT_ALIGNMENT);
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        return card;
+    }
+
+    private void addInfoField(JPanel panel, String label, String valor) {
+        JPanel fieldPanel = new JPanel(new BorderLayout(0, 4));
+        fieldPanel.setOpaque(false);
+        
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        lbl.setForeground(TXT_G);
+        
+        JLabel val = new JLabel(valor);
+        val.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        val.setForeground(TXT_D);
+        
+        fieldPanel.add(lbl, BorderLayout.NORTH);
+        fieldPanel.add(val, BorderLayout.CENTER);
+        
+        panel.add(fieldPanel);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -574,6 +623,7 @@ public class HistorialAuditoriaPanel extends JPanel {
         @Override public Component getTableCellRendererComponent(
                 JTable t, Object v, boolean sel, boolean foc, int r, int c) {
             JLabel l = (JLabel) super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+            l.setHorizontalAlignment(SwingConstants.CENTER);
             l.setFont(new Font("Segoe UI", Font.BOLD, 11));
             l.setForeground(TXT_D);
             l.setBorder(new EmptyBorder(0, 10, 0, 6));
@@ -586,6 +636,7 @@ public class HistorialAuditoriaPanel extends JPanel {
         @Override public Component getTableCellRendererComponent(
                 JTable t, Object v, boolean sel, boolean foc, int r, int c) {
             JLabel l = (JLabel) super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+            l.setHorizontalAlignment(SwingConstants.CENTER);
             l.setFont(new Font("Segoe UI", Font.PLAIN, 10));
             l.setForeground(TXT_G);
             l.setBorder(new EmptyBorder(0, 6, 0, 10));
@@ -598,6 +649,7 @@ public class HistorialAuditoriaPanel extends JPanel {
         @Override public Component getTableCellRendererComponent(
                 JTable t, Object v, boolean sel, boolean foc, int r, int c) {
             JLabel l = (JLabel) super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+            l.setHorizontalAlignment(SwingConstants.CENTER);
             l.setFont(new Font("Segoe UI", Font.BOLD, 12));
             l.setForeground(NAVY);
             l.setBorder(new EmptyBorder(0, 10, 0, 10));
@@ -637,7 +689,7 @@ public class HistorialAuditoriaPanel extends JPanel {
     }
 
     static JButton makeDetalleBtn() {
-        JButton b = new JButton("👁  Ver detalle") {
+        JButton b = new JButton("  Ver detalle") {
             boolean hov;
             { addMouseListener(new MouseAdapter() {
                 @Override public void mouseEntered(MouseEvent e) { hov = true; repaint(); }
@@ -657,6 +709,8 @@ public class HistorialAuditoriaPanel extends JPanel {
         };
         b.setFont(new Font("Segoe UI", Font.BOLD, 10));
         b.setForeground(new Color(0x2563EB));
+        b.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 12, new Color(0x2563EB)));
         b.setOpaque(false); b.setContentAreaFilled(false);
         b.setBorderPainted(false); b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -685,18 +739,6 @@ public class HistorialAuditoriaPanel extends JPanel {
         };
     }
 
-    private JTextField searchField() {
-        JTextField f = new JTextField(20);
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        f.setPreferredSize(new Dimension(240, 30));
-        f.putClientProperty("JTextField.placeholderText",
-            "Buscar por usuario, acción o módulo…");
-        f.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(BORDER, 1, true),
-            new EmptyBorder(0, 8, 0, 8)));
-        return f;
-    }
-
     private JSpinner dateSpinner(LocalDate initial) {
         javax.swing.SpinnerDateModel m = new javax.swing.SpinnerDateModel();
         m.setValue(toDate(initial));
@@ -720,126 +762,6 @@ public class HistorialAuditoriaPanel extends JPanel {
         l.setFont(new Font("Segoe UI", Font.BOLD, 11));
         l.setForeground(TXT_G);
         return l;
-    }
-
-    private static JButton solidBtn(String text, Color bg) {
-        JButton b = new JButton(text) {
-            boolean hov;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)  { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hov ? bg.darker() : bg);
-                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        b.setFont(new Font("Segoe UI", Font.BOLD, 12)); b.setForeground(Color.WHITE);
-        b.setOpaque(false); b.setContentAreaFilled(false);
-        b.setBorderPainted(false); b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(100, 30));
-        return b;
-    }
-
-    private static JButton outlineBtn(String text, Color accent) {
-        JButton b = new JButton(text) {
-            boolean hov;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)  { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hov ? new Color(accent.getRed(),accent.getGreen(),accent.getBlue(),20) : Color.WHITE);
-                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
-                g2.setColor(accent); g2.setStroke(new BasicStroke(1.5f));
-                g2.draw(new RoundRectangle2D.Float(0.5f,0.5f,getWidth()-2,getHeight()-2,8,8));
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        b.setFont(new Font("Segoe UI", Font.BOLD, 11)); b.setForeground(accent);
-        b.setOpaque(false); b.setContentAreaFilled(false);
-        b.setBorderPainted(false); b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(130, 30));
-        return b;
-    }
-
-    private JButton pageBtn(int pg, boolean active) {
-        JButton b = new JButton(String.valueOf(pg + 1)) {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(active ? BLUE : Color.WHITE);
-                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,6,6));
-                if (!active) { g2.setColor(BORDER); g2.setStroke(new BasicStroke(1f));
-                    g2.draw(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,6,6)); }
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        b.setFont(new Font("Segoe UI", active ? Font.BOLD : Font.PLAIN, 11));
-        b.setForeground(active ? Color.WHITE : TXT_D);
-        b.setOpaque(false); b.setContentAreaFilled(false);
-        b.setBorderPainted(false); b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(30, 26));
-        if (!active) b.addActionListener(e -> cambiarPagina(pg));
-        return b;
-    }
-
-    private JButton pageArrow(String sym) {
-        JButton b = new JButton(sym) {
-            boolean hov;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true; repaint(); }
-                @Override public void mouseExited(MouseEvent e)  { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                if (hov && isEnabled()) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(new Color(0xEFF6FF));
-                    g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,6,6));
-                    g2.dispose();
-                }
-                super.paintComponent(g);
-            }
-        };
-        b.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        b.setForeground(TXT_G); b.setOpaque(false); b.setContentAreaFilled(false);
-        b.setBorderPainted(false); b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setPreferredSize(new Dimension(28, 26));
-        return b;
-    }
-
-    /** Calcula qué números de página mostrar (con ventana deslizante). */
-    private List<Integer> calcularPaginas(int current, int total) {
-        List<Integer> list = new ArrayList<>();
-        if (total <= 7) {
-            for (int i = 0; i < total; i++) list.add(i);
-        } else {
-            list.add(0);
-            int lo = Math.max(1, current - 1);
-            int hi = Math.min(total - 2, current + 1);
-            for (int i = lo; i <= hi; i++) list.add(i);
-            list.add(total - 1);
-        }
-        return list.stream().distinct().sorted().toList();
-    }
-
-    // ── Debounce ──────────────────────────────────────────────────────────────
-    private Timer debounceTimer;
-    private void scheduleSearch() {
-        if (debounceTimer != null && debounceTimer.isRunning()) debounceTimer.stop();
-        debounceTimer = new Timer(350, e -> { paginaActual = 0; buscar(); });
-        debounceTimer.setRepeats(false);
-        debounceTimer.start();
     }
 
     // ── Helpers generales ────────────────────────────────────────────────────

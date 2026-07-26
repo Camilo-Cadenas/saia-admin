@@ -33,6 +33,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerDateModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
@@ -195,22 +196,26 @@ public class EstadisticasPanel extends JPanel {
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
 
         // KPI 1 – Total ingresos
-        JPanel k1 = kpiCard(C_BLUE, new Color(0xEFF6FF), "👥", "Total de ingresos");
+        JPanel k1 = kpiCard(C_BLUE, new Color(0xEFF6FF), 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USERS, "Total de ingresos");
         kpiTotalVal = kpiValue(k1, "—");
         kpiTotalSub = kpiSubLabel(k1, "vs. período anterior");
 
         // KPI 2 – Promedio diario
-        JPanel k2 = kpiCard(C_GREEN, new Color(0xECFDF5), "📈", "Promedio diario");
+        JPanel k2 = kpiCard(C_GREEN, new Color(0xECFDF5), 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CHART_LINE, "Promedio diario");
         kpiPromVal = kpiValue(k2, "—");
         kpiPromSub = kpiSubLabel(k2, "ingresos por día");
 
         // KPI 3 – Hora pico
-        JPanel k3 = kpiCard(C_PURPLE, new Color(0xF5F3FF), "🕐", "Hora pico promedio");
+        JPanel k3 = kpiCard(C_PURPLE, new Color(0xF5F3FF), 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CLOCK, "Hora pico promedio");
         kpiHoraVal = kpiValue(k3, "—");
         kpiSubLabel(k3, "mayor flujo de entrada");
 
         // KPI 4 – Registros válidos
-        JPanel k4 = kpiCard(C_ORANGE, new Color(0xFFF7ED), "🛡", "Registros válidos");
+        JPanel k4 = kpiCard(C_ORANGE, new Color(0xFFF7ED), 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SHIELD_ALT, "Registros válidos");
         kpiValidVal = kpiValue(k4, "—");
         kpiSubLabel(k4, "consistencia de datos");
 
@@ -218,7 +223,8 @@ public class EstadisticasPanel extends JPanel {
         return row;
     }
 
-    private JPanel kpiCard(Color accent, Color bgIco, String ico, String titulo) {
+    private JPanel kpiCard(Color accent, Color bgIco, 
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid iconGlyph, String titulo) {
         JPanel p = card();
         p.setLayout(new BorderLayout(12, 0));
         p.setBorder(new EmptyBorder(14, 16, 14, 16));
@@ -235,17 +241,18 @@ public class EstadisticasPanel extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(bgIco);
                 g2.fillOval(0, 0, getWidth(), getHeight());
-                g2.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 22));
-                FontMetrics fm = g2.getFontMetrics();
-                int x = (getWidth() - fm.stringWidth(ico)) / 2;
-                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-                g2.setColor(accent);
-                g2.drawString(ico, x, y);
                 g2.dispose();
             }
         };
         circle.setOpaque(false);
         circle.setPreferredSize(new Dimension(52, 52));
+        circle.setLayout(new BorderLayout());
+        
+        // Agregar el icono al centro del círculo
+        JLabel iconLabel = new JLabel(com.saia.presentation.IconUtil.icon(iconGlyph, 24, accent));
+        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        iconLabel.setVerticalAlignment(SwingConstants.CENTER);
+        circle.add(iconLabel, BorderLayout.CENTER);
 
         JPanel txt = new JPanel();
         txt.setLayout(new BoxLayout(txt, BoxLayout.Y_AXIS));
@@ -293,7 +300,9 @@ public class EstadisticasPanel extends JPanel {
         // Encabezado
         JPanel head = new JPanel(new BorderLayout());
         head.setOpaque(false);
-        JLabel t = new JLabel("📊  Ingresos totales por día");
+        JLabel t = new JLabel("  Ingresos totales por día");
+        t.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CHART_BAR, 16, TXT_D));
         t.setFont(new Font("Segoe UI", Font.BOLD, 15));
         t.setForeground(TXT_D);
 
@@ -349,7 +358,9 @@ public class EstadisticasPanel extends JPanel {
         c.setLayout(new BorderLayout(0, 8));
         c.setBorder(new EmptyBorder(14, 14, 14, 14));
 
-        JLabel t = new JLabel("🍩  Distribución por franja horaria");
+        JLabel t = new JLabel("  Distribución por franja horaria");
+        t.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CHART_PIE, 14, TXT_D));
         t.setFont(new Font("Segoe UI", Font.BOLD, 12));
         t.setForeground(TXT_D);
 
@@ -376,17 +387,19 @@ public class EstadisticasPanel extends JPanel {
         c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
         c.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        JLabel t = new JLabel("📋  Información del período");
+        JLabel t = new JLabel("  Información del período");
+        t.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.INFO_CIRCLE, 14, TXT_D));
         t.setFont(new Font("Segoe UI", Font.BOLD, 12));
         t.setForeground(TXT_D);
         t.setAlignmentX(LEFT_ALIGNMENT);
         c.add(t);
         c.add(vgap(10));
 
-        lPeriodo = infoRow(c, "📅", "Período seleccionado", C_BLUE);   c.add(vgap(6));
-        lDias    = infoRow(c, "👥", "Días del período",     TXT_G);    c.add(vgap(6));
-        lMax     = infoRow(c, "📈", "Día con más ingresos", C_GREEN);  c.add(vgap(6));
-        lMin     = infoRow(c, "📉", "Día con menos ingresos", C_ORANGE);
+        lPeriodo = infoRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CALENDAR_ALT, "Período seleccionado", C_BLUE);   c.add(vgap(6));
+        lDias    = infoRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CALENDAR_DAY, "Días del período",     TXT_G);    c.add(vgap(6));
+        lMax     = infoRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.ARROW_UP, "Día con más ingresos", C_GREEN);  c.add(vgap(6));
+        lMin     = infoRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.ARROW_DOWN, "Día con menos ingresos", C_ORANGE);
         return c;
     }
 
@@ -396,17 +409,19 @@ public class EstadisticasPanel extends JPanel {
         c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
         c.setBorder(new EmptyBorder(14, 16, 14, 16));
 
-        JLabel t = new JLabel("⚡  Resumen rápido");
+        JLabel t = new JLabel("  Resumen rápido");
+        t.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.BOLT, 14, TXT_D));
         t.setFont(new Font("Segoe UI", Font.BOLD, 12));
         t.setForeground(TXT_D);
         t.setAlignmentX(LEFT_ALIGNMENT);
         c.add(t);
         c.add(vgap(10));
 
-        rTotal = resRow(c, "👥", "Total de ingresos en el período", C_BLUE);   c.add(vgap(6));
-        rProm  = resRow(c, "📈", "Promedio diario",                 C_GREEN);  c.add(vgap(6));
-        rHora  = resRow(c, "🕐", "Hora pico promedio",              C_PURPLE); c.add(vgap(6));
-        rVal   = resRow(c, "🛡", "Registros válidos",               C_ORANGE);
+        rTotal = resRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USERS, "Total de ingresos en el período", C_BLUE);   c.add(vgap(6));
+        rProm  = resRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CHART_LINE, "Promedio diario",                 C_GREEN);  c.add(vgap(6));
+        rHora  = resRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CLOCK, "Hora pico promedio",              C_PURPLE); c.add(vgap(6));
+        rVal   = resRow(c, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SHIELD_ALT, "Registros válidos",               C_ORANGE);
         return c;
     }
 
@@ -421,7 +436,7 @@ public class EstadisticasPanel extends JPanel {
 
         String admin = "";
         try { admin = SessionManager.getInstance().getAdminNombre(); } catch (Exception ignored) {}
-        JLabel left = new JLabel("SAIA – Sistema de Apoyo a la Información del Aprendiz  |  " + admin);
+        JLabel left = new JLabel("SAIA – Sistema de Auto Gestion de Aprendices  |  " + admin);
         left.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         left.setForeground(TXT_G);
 
@@ -602,12 +617,14 @@ public class EstadisticasPanel extends JPanel {
         };
     }
 
-    private JLabel infoRow(JPanel p, String ico, String label, Color valColor) {
+    private JLabel infoRow(JPanel p, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid iconGlyph, 
+            String label, Color valColor) {
         JPanel row = new JPanel(new BorderLayout(6, 0));
         row.setOpaque(false);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         row.setAlignmentX(LEFT_ALIGNMENT);
-        JLabel k = new JLabel(ico + "  " + label);
+        JLabel k = new JLabel("  " + label);
+        k.setIcon(com.saia.presentation.IconUtil.icon(iconGlyph, 12, TXT_G));
         k.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         k.setForeground(TXT_G);
         JLabel v = new JLabel("—");
@@ -619,13 +636,15 @@ public class EstadisticasPanel extends JPanel {
         return v;
     }
 
-    private JLabel resRow(JPanel p, String ico, String label, Color color) {
+    private JLabel resRow(JPanel p, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid iconGlyph, 
+            String label, Color color) {
         JPanel row = new JPanel(new BorderLayout(6, 0));
         row.setOpaque(false);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         row.setAlignmentX(LEFT_ALIGNMENT);
         row.setBorder(new EmptyBorder(2, 0, 2, 0));
-        JLabel k = new JLabel(ico + "  " + label);
+        JLabel k = new JLabel("  " + label);
+        k.setIcon(com.saia.presentation.IconUtil.icon(iconGlyph, 12, TXT_G));
         k.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         k.setForeground(TXT_G);
         JLabel v = new JLabel("—");

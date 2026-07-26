@@ -114,7 +114,7 @@ public class ReporteExportService {
                     " al " +
                     (filtros.getFechaFin() != null ? filtros.getFechaFin().toString() : "—");
             }
-            String generated = "Generado: " + LocalDateTime.now().format(FMT_FILE.ofPattern("dd/MM/yyyy HH:mm"));
+            String generated = "Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             Cell metaCell = metaRow.createCell(0);
             metaCell.setCellValue(periodo + "    " + generated +
                     "    Total: " + filas.size() + " registros");
@@ -165,100 +165,227 @@ public class ReporteExportService {
                               FiltrosReporte filtros,
                               List<String> columnas,
                               List<Map<String, Object>> filas) throws IOException {
-        Document doc = new Document(PageSize.A4.rotate());
+        Document doc = null;
+        FileOutputStream fos = null;
         try {
-            PdfWriter.getInstance(doc, new FileOutputStream(f));
+            doc = new Document(PageSize.A4.rotate(), 36, 36, 54, 50);
+            fos = new FileOutputStream(f);
+            PdfWriter.getInstance(doc, fos);
             doc.open();
 
-            // Título
-            com.lowagie.text.Font tFont = new com.lowagie.text.Font(
+            // === ENCABEZADO DEL INFORME ===
+            
+            // Logo/Título SAIA con borde superior
+            com.lowagie.text.Font logoFont = new com.lowagie.text.Font(
+                    com.lowagie.text.Font.HELVETICA, 20,
+                    com.lowagie.text.Font.BOLD,
+                    new java.awt.Color(0x39A900));
+            Paragraph logo = new Paragraph("SAIA", logoFont);
+            logo.setAlignment(Element.ALIGN_LEFT);
+            logo.setSpacingAfter(2f);
+            doc.add(logo);
+
+            // Subtítulo del sistema
+            com.lowagie.text.Font sysFont = new com.lowagie.text.Font(
+                    com.lowagie.text.Font.HELVETICA, 8,
+                    com.lowagie.text.Font.NORMAL,
+                    new java.awt.Color(0x666666));
+            Paragraph sys = new Paragraph("Sistema de Apoyo a la Información del Aprendiz", sysFont);
+            sys.setAlignment(Element.ALIGN_LEFT);
+            sys.setSpacingAfter(15f);
+            doc.add(sys);
+
+            // Línea separadora
+            PdfPTable linea1 = new PdfPTable(1);
+            linea1.setWidthPercentage(100f);
+            linea1.setSpacingAfter(15f);
+            PdfPCell lineaCell = new PdfPCell();
+            lineaCell.setBorder(0);
+            lineaCell.setBorderWidthBottom(2f);
+            lineaCell.setBorderColorBottom(new java.awt.Color(0x39A900));
+            lineaCell.setPadding(0);
+            linea1.addCell(lineaCell);
+            doc.add(linea1);
+
+            // Título del reporte
+            com.lowagie.text.Font titleFont = new com.lowagie.text.Font(
                     com.lowagie.text.Font.HELVETICA, 16,
                     com.lowagie.text.Font.BOLD,
                     new java.awt.Color(0x1A3A5C));
-            Paragraph titulo = new Paragraph("SAIA – " + tipo.titulo, tFont);
+            Paragraph titulo = new Paragraph(tipo.titulo.toUpperCase(), titleFont);
             titulo.setAlignment(Element.ALIGN_CENTER);
-            titulo.setSpacingAfter(14f);
+            titulo.setSpacingAfter(8f);
             doc.add(titulo);
 
-            // Subtítulo con fecha
-            com.lowagie.text.Font subFont = new com.lowagie.text.Font(
+            // Información del reporte en tabla de 2 columnas
+            PdfPTable infoTable = new PdfPTable(2);
+            infoTable.setWidthPercentage(60f);
+            infoTable.setHorizontalAlignment(Element.ALIGN_CENTER);
+            infoTable.setSpacingAfter(15f);
+            
+            com.lowagie.text.Font infoLabelFont = new com.lowagie.text.Font(
+                    com.lowagie.text.Font.HELVETICA, 9,
+                    com.lowagie.text.Font.BOLD,
+                    new java.awt.Color(0x333333));
+            com.lowagie.text.Font infoValueFont = new com.lowagie.text.Font(
                     com.lowagie.text.Font.HELVETICA, 9,
                     com.lowagie.text.Font.NORMAL,
-                    java.awt.Color.GRAY);
-            Paragraph sub = new Paragraph(
-                "Generado el " + LocalDateTime.now().format(
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")), subFont);
-            sub.setAlignment(Element.ALIGN_CENTER);
-            sub.setSpacingAfter(4f);
-            doc.add(sub);
+                    new java.awt.Color(0x666666));
 
-            // Metadata de filtros
-            String periodoStr = "";
+            // Fecha de generación
+            PdfPCell labelCell = new PdfPCell(new Phrase("Fecha de generación:", infoLabelFont));
+            labelCell.setBorder(0);
+            labelCell.setPadding(3f);
+            labelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            infoTable.addCell(labelCell);
+
+            PdfPCell valueCell = new PdfPCell(new Phrase(
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")), 
+                infoValueFont));
+            valueCell.setBorder(0);
+            valueCell.setPadding(3f);
+            infoTable.addCell(valueCell);
+
+            // Período (si aplica)
             if (filtros.getFechaInicio() != null || filtros.getFechaFin() != null) {
-                periodoStr = "Período: " +
-                    (filtros.getFechaInicio() != null ? filtros.getFechaInicio().format(
-                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—") +
-                    " al " +
-                    (filtros.getFechaFin() != null ? filtros.getFechaFin().format(
-                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—") +
-                    "   •   ";
-            }
-            String metaStr = periodoStr + "Total de registros: " + filas.size();
-            Paragraph meta = new Paragraph(metaStr, subFont);
-            meta.setAlignment(Element.ALIGN_CENTER);
-            meta.setSpacingAfter(10f);
-            doc.add(meta);
+                labelCell = new PdfPCell(new Phrase("Período:", infoLabelFont));
+                labelCell.setBorder(0);
+                labelCell.setPadding(3f);
+                labelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                infoTable.addCell(labelCell);
 
-            // Tabla
-            if (!columnas.isEmpty()) {
+                String periodoStr = (filtros.getFechaInicio() != null ? 
+                    filtros.getFechaInicio().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—") +
+                    " al " +
+                    (filtros.getFechaFin() != null ? 
+                    filtros.getFechaFin().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—");
+                
+                valueCell = new PdfPCell(new Phrase(periodoStr, infoValueFont));
+                valueCell.setBorder(0);
+                valueCell.setPadding(3f);
+                infoTable.addCell(valueCell);
+            }
+
+            // Total de registros
+            labelCell = new PdfPCell(new Phrase("Total de registros:", infoLabelFont));
+            labelCell.setBorder(0);
+            labelCell.setPadding(3f);
+            labelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            infoTable.addCell(labelCell);
+
+            valueCell = new PdfPCell(new Phrase(String.valueOf(filas.size()), infoValueFont));
+            valueCell.setBorder(0);
+            valueCell.setPadding(3f);
+            infoTable.addCell(valueCell);
+
+            doc.add(infoTable);
+
+            // === TABLA DE DATOS ===
+
+            if (!columnas.isEmpty() && !filas.isEmpty()) {
                 PdfPTable table = new PdfPTable(columnas.size());
                 table.setWidthPercentage(100f);
+                table.setSpacingBefore(5f);
 
-                // Cabecera
+                // Cabecera con estilo mejorado
                 com.lowagie.text.Font hFont = new com.lowagie.text.Font(
                         com.lowagie.text.Font.HELVETICA, 8,
                         com.lowagie.text.Font.BOLD,
                         java.awt.Color.WHITE);
-                java.awt.Color hdrColor = new java.awt.Color(0x1A3A5C);
+                java.awt.Color hdrColor = new java.awt.Color(0x39A900); // Verde SENA
+                
                 for (String col : columnas) {
-                    PdfPCell cell = new PdfPCell(new Phrase(col, hFont));
+                    PdfPCell cell = new PdfPCell(new Phrase(col.toUpperCase(), hFont));
                     cell.setBackgroundColor(hdrColor);
                     cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                    cell.setPadding(5f);
+                    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                    cell.setPadding(6f);
+                    cell.setBorderWidth(1f);
+                    cell.setBorderColor(java.awt.Color.WHITE);
                     table.addCell(cell);
                 }
 
-                // Filas
+                // Filas de datos con alternancia de colores
                 com.lowagie.text.Font dFont = new com.lowagie.text.Font(
-                        com.lowagie.text.Font.HELVETICA, 7);
-                java.awt.Color even = new java.awt.Color(0xEEF2FF);
+                        com.lowagie.text.Font.HELVETICA, 7,
+                        com.lowagie.text.Font.NORMAL,
+                        new java.awt.Color(0x333333));
+                java.awt.Color colorPar = java.awt.Color.WHITE;
+                java.awt.Color colorImpar = new java.awt.Color(0xF8F9FA);
+                
                 int idx = 0;
                 for (Map<String, Object> fila : filas) {
-                    java.awt.Color bg = (idx++ % 2 == 0) ? java.awt.Color.WHITE : even;
+                    java.awt.Color bg = (idx++ % 2 == 0) ? colorPar : colorImpar;
                     for (Object val : fila.values()) {
-                        PdfPCell cell = new PdfPCell(
-                                new Phrase(val != null ? val.toString() : "", dFont));
+                        String texto = val != null ? val.toString() : "";
+                        // Limitar longitud de texto para evitar celdas muy grandes
+                        if (texto.length() > 100) {
+                            texto = texto.substring(0, 97) + "...";
+                        }
+                        PdfPCell cell = new PdfPCell(new Phrase(texto, dFont));
                         cell.setBackgroundColor(bg);
                         cell.setPadding(4f);
+                        cell.setPaddingLeft(6f);
+                        cell.setPaddingRight(6f);
+                        cell.setBorderWidth(0.5f);
+                        cell.setBorderColor(new java.awt.Color(0xDEE2E6));
                         table.addCell(cell);
                     }
                 }
                 doc.add(table);
             } else {
-                doc.add(new Paragraph("Sin datos para los filtros seleccionados."));
+                com.lowagie.text.Font emptyFont = new com.lowagie.text.Font(
+                        com.lowagie.text.Font.HELVETICA, 11,
+                        com.lowagie.text.Font.ITALIC,
+                        new java.awt.Color(0x999999));
+                Paragraph empty = new Paragraph("No se encontraron datos para los filtros seleccionados.", emptyFont);
+                empty.setAlignment(Element.ALIGN_CENTER);
+                empty.setSpacingBefore(30f);
+                doc.add(empty);
             }
 
-            // Pie de página
+            // === PIE DE PÁGINA ===
+            
+            // Línea separadora inferior
+            PdfPTable linea2 = new PdfPTable(1);
+            linea2.setWidthPercentage(100f);
+            linea2.setSpacingBefore(20f);
+            linea2.setSpacingAfter(8f);
+            lineaCell = new PdfPCell();
+            lineaCell.setBorder(0);
+            lineaCell.setBorderWidthTop(1f);
+            lineaCell.setBorderColorTop(new java.awt.Color(0xDEE2E6));
+            lineaCell.setPadding(0);
+            linea2.addCell(lineaCell);
+            doc.add(linea2);
+
+            // Información del pie
+            com.lowagie.text.Font pieFont = new com.lowagie.text.Font(
+                    com.lowagie.text.Font.HELVETICA, 7,
+                    com.lowagie.text.Font.NORMAL,
+                    new java.awt.Color(0x999999));
+            
             Paragraph pie = new Paragraph(
-                "Total de registros: " + filas.size() + "  |  SAIA Admin v1.0", subFont);
-            pie.setAlignment(Element.ALIGN_RIGHT);
-            pie.setSpacingBefore(12f);
+                "SAIA - Sistema de Apoyo a la Información del Aprendiz  |  " +
+                "Centro de Biotecnología Agropecuaria - SENA  |  " +
+                "Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                pieFont);
+            pie.setAlignment(Element.ALIGN_CENTER);
             doc.add(pie);
 
         } catch (DocumentException e) {
             throw new IOException("Error generando PDF: " + e.getMessage(), e);
         } finally {
-            doc.close();
+            if (doc != null && doc.isOpen()) {
+                doc.close();
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException ignored) {
+                    // Ya cerrado o error al cerrar
+                }
+            }
         }
     }
 

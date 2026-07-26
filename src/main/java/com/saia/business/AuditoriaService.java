@@ -44,6 +44,26 @@ public class AuditoriaService {
         return new PaginaAuditoria(registros, total, pag, pages);
     }
 
+    /**
+     * Consulta todos los registros sin paginación.
+     */
+    public List<RegistroAuditoria> buscarTodos(
+            LocalDate desde, LocalDate hasta,
+            String accion, String entidad,
+            String textoBusca) {
+        // Límite alto para obtener todos los registros (ajustar según necesidades)
+        return dao.findAll(desde, hasta, accion, entidad, textoBusca, 10000, 0);
+    }
+
     public List<String> getAcciones()  { return dao.getAccionesDistintas(); }
     public List<String> getEntidades() { return dao.getEntidadesDistintas(); }
+    
+    /**
+     * Obtiene el nombre completo de una persona desde la base de datos.
+     * @param numDoc número de documento
+     * @return nombre completo o "—" si no se encuentra
+     */
+    public String getNombrePersona(int numDoc) {
+        return dao.getNombrePersona(numDoc);
+    }
 }

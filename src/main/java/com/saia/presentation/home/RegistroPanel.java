@@ -83,8 +83,9 @@ class RegistroPanel extends BaseFormPanel {
         JButton btnLimpiar  = actionBtn("  LIMPIAR",   new Color(0x4A6FA5),   Color.WHITE, 130);
         JButton btnCancelar = actionBtn("  CANCELAR",  BTN_CANCEL,            Color.WHITE, 130);
         btnGuardar.setIcon(com.saia.presentation.IconUtil.save());
-        btnLimpiar.setIcon(com.saia.presentation.IconUtil.clear());
-        btnCancelar.setIcon(com.saia.presentation.IconUtil.close());
+        btnLimpiar.setIcon(com.saia.presentation.IconUtil.refresh());
+        btnCancelar.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TIMES_CIRCLE, 14, Color.WHITE));
 
         btnGuardar.addActionListener(e -> guardar());
         btnLimpiar.addActionListener(e -> limpiar());

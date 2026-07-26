@@ -46,9 +46,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
 import com.saia.data.ReporteConsultaDAO;
-import com.saia.data.ReporteConsultaDAO.EstadisticaPunto;
 import com.saia.data.ReporteConsultaDAO.FilaReporte;
-import com.saia.data.ReporteConsultaDAO.ResumenPeriodo;
+import com.saia.presentation.UITheme;
 
 /**
  * Panel "Gestión de Reportes" — dos pestañas:
@@ -81,16 +80,6 @@ public class ReportesPanel extends JPanel {
     private JLabel            lblConteo;
     private JLabel            lblStatTotal, lblStatHoy, lblStatGuardas, lblStatAprendices;
     private List<FilaReporte> listaReportes = new ArrayList<>();
-
-    // ── Pestaña 2 — Estadísticas ──────────────────────────────────────────────
-    private JComboBox<String> cmbTipoEstad;  // Día / Mes / Año / Todos
-    private JSpinner          spDiaEstad;    // date picker para Día
-    private JComboBox<String> cmbMesEstad;   // mes 1-12
-    private JComboBox<String> cmbAnioEstad;  // año para Mes y Año
-    private JLabel            lblTotalI, lblTotalS, lblNetos;
-    private GraficoLineas     grafico;
-    private JLabel            lblResumenTitulo;
-    private JLabel            lblResI, lblResS, lblResPDI, lblResPDS, lblResDif;
 
     public ReportesPanel() {
         setLayout(new BorderLayout());
@@ -166,8 +155,14 @@ public class ReportesPanel extends JPanel {
         cmbTipoBusqueda.addActionListener(e -> actualizarControlesFiltro(p));
 
         // Botones
-        JButton btnBuscar  = makeBtn("🔍  Buscar",  GREEN,                    Color.WHITE, 110, 32);
-        JButton btnLimpiar = makeBtn("↺  Todos",    new Color(0x6C757D), Color.WHITE, 100, 32);
+        JButton btnBuscar  = UITheme.solidButton("  Buscar", GREEN, 110, 32);
+        btnBuscar.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.SEARCH, 14, Color.WHITE));
+        
+        JButton btnLimpiar = UITheme.solidButton("  Todos", new Color(0x6C757D), 100, 32);
+        btnLimpiar.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.LIST, 14, Color.WHITE));
+        
         btnBuscar.addActionListener(e -> buscarReportes());
         btnLimpiar.addActionListener(e -> {
             cmbTipoBusqueda.setSelectedIndex(0);
@@ -191,38 +186,48 @@ public class ReportesPanel extends JPanel {
     private JPanel buildStatCards() {
         JPanel row = new JPanel(new GridLayout(1, 4, 12, 0));
         row.setOpaque(false);
-        row.setPreferredSize(new Dimension(0, 90));
+        row.setPreferredSize(new Dimension(0, 110));
 
-        lblStatTotal      = statCard(row, "📋", "Total reportes",       new Color(0x1565C0));
-        lblStatHoy        = statCard(row, "📅", "Reportes hoy",          new Color(0x6A1B9A));
-        lblStatGuardas    = statCard(row, "👮", "Guardas activos",       new Color(0x2E7D32));
-        lblStatAprendices = statCard(row, "🎓", "Aprendices reportados", new Color(0xE65100));
+        lblStatTotal      = statCard(row, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.FILE_ALT,        "Total reportes",       new Color(0x1565C0));
+        lblStatHoy        = statCard(row, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CALENDAR_DAY,    "Reportes hoy",         new Color(0x6A1B9A));
+        lblStatGuardas    = statCard(row, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_SHIELD,     "Guardas activos",      new Color(0x2E7D32));
+        lblStatAprendices = statCard(row, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_GRADUATE,   "Aprendices reportados", new Color(0xE65100));
         return row;
     }
 
-    private JLabel statCard(JPanel row, String emoji, String titulo, Color color) {
+    private JLabel statCard(JPanel row, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid iconGlyph, String titulo, Color color) {
         JPanel card = card();
-        card.setLayout(new BorderLayout(10, 0));
-        card.setBorder(new EmptyBorder(10, 14, 10, 14));
+        card.setLayout(new BorderLayout(0, 8));
+        card.setBorder(new EmptyBorder(16, 14, 16, 14));
 
-        JLabel ico = new JLabel(emoji);
-        ico.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        // Contenedor para centrar todo el contenido verticalmente
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
 
-        JPanel txt = new JPanel();
-        txt.setLayout(new BoxLayout(txt, BoxLayout.Y_AXIS));
-        txt.setOpaque(false);
-
+        // Valor numérico
         JLabel val = new JLabel("—");
-        val.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        val.setFont(new Font("Segoe UI", Font.BOLD, 32));
         val.setForeground(color);
+        val.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        // Título descriptivo
         JLabel lbl = new JLabel(titulo);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lbl.setForeground(TEXT_GRAY);
+        lbl.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        txt.add(val); txt.add(lbl);
-        card.add(ico, BorderLayout.WEST);
-        card.add(txt, BorderLayout.CENTER);
+        content.add(val);
+        content.add(Box.createVerticalStrut(4));
+        content.add(lbl);
+
+        // Icono en la parte inferior
+        JLabel ico = new JLabel();
+        ico.setIcon(com.saia.presentation.IconUtil.icon(iconGlyph, 28, new Color(color.getRed(), color.getGreen(), color.getBlue(), 80)));
+        ico.setHorizontalAlignment(SwingConstants.CENTER);
+
+        card.add(content, BorderLayout.CENTER);
+        card.add(ico, BorderLayout.SOUTH);
         row.add(card);
         return val;
     }
@@ -245,7 +250,7 @@ public class ReportesPanel extends JPanel {
 
         JPanel hRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         hRight.setOpaque(false);
-        hRight.add(makeBtn("⬇ Exportar", GREEN, Color.WHITE, 110, 30));
+        // Botón Exportar eliminado - no se está usando
         header.add(titulo,  BorderLayout.WEST);
         header.add(hRight,  BorderLayout.EAST);
 
@@ -323,7 +328,8 @@ public class ReportesPanel extends JPanel {
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) {
             JLabel lbl = new JLabel();
-            lbl.setIcon(com.saia.presentation.IconUtil.tblEye());
+            lbl.setIcon(com.saia.presentation.IconUtil.icon(
+                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 16, new Color(0x2563EB)));
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             lbl.setOpaque(true);
@@ -339,7 +345,8 @@ public class ReportesPanel extends JPanel {
         OjoEditor(ReportesPanel p) {
             super(new JCheckBox());
             lbl = new JLabel();
-            lbl.setIcon(com.saia.presentation.IconUtil.tblEye());
+            lbl.setIcon(com.saia.presentation.IconUtil.icon(
+                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 16, new Color(0x2563EB)));
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             lbl.setOpaque(true);
@@ -378,7 +385,9 @@ public class ReportesPanel extends JPanel {
         // ── Título ────────────────────────────────────────────────────────────
         JPanel titleRow = new JPanel(new BorderLayout());
         titleRow.setOpaque(false);
-        JLabel titleLbl = new JLabel("⚠  Detalle del Reporte #" + f.idReporte);
+        JLabel titleLbl = new JLabel("  Detalle del Reporte #" + f.idReporte);
+        titleLbl.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.FILE_ALT, 18, new Color(0x1A3A5C)));
         titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLbl.setForeground(new Color(0x1A3A5C));
         titleRow.add(titleLbl, BorderLayout.WEST);
@@ -396,8 +405,9 @@ public class ReportesPanel extends JPanel {
         JPanel fechaRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         fechaRow.setOpaque(false);
         String fechaStr = f.fechaReporte != null ? f.fechaReporte.format(FMT_TS) : "—";
-        JLabel fechaIco = new JLabel("📅");
-        fechaIco.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 13));
+        JLabel fechaIco = new JLabel();
+        fechaIco.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CALENDAR_ALT, 14, new Color(0x1565C0)));
         JLabel fechaLbl = new JLabel("Fecha y hora del reporte:");
         fechaLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
         fechaLbl.setForeground(TEXT_DARK);
@@ -417,13 +427,15 @@ public class ReportesPanel extends JPanel {
         JPanel cardG = detalleCard();
         cardG.setLayout(new BorderLayout(12, 0));
         cardG.setBorder(new EmptyBorder(14, 14, 14, 14));
-        JLabel tG = new JLabel("🛡  Personal de Seguridad (Guardia)");
+        JLabel tG = new JLabel("  Personal de Seguridad (Guardia)");
+        tG.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_SHIELD, 14, new Color(0x1A3A5C)));
         tG.setFont(new Font("Segoe UI", Font.BOLD, 13));
         tG.setForeground(new Color(0x1A3A5C));
         tG.setBorder(new EmptyBorder(0,0,10,0));
 
-        // Avatar placeholder guardia
-        JPanel avatarG = buildAvatar(new Color(0x3F51B5));
+        // Avatar con foto del guardia
+        JPanel avatarG = buildAvatarConFoto(f.numDocGuarda, new Color(0x3F51B5), true);
         JPanel infoG = new JPanel();
         infoG.setLayout(new BoxLayout(infoG, BoxLayout.Y_AXIS));
         infoG.setOpaque(false);
@@ -443,12 +455,14 @@ public class ReportesPanel extends JPanel {
         JPanel cardA = detalleCard();
         cardA.setLayout(new BorderLayout(12, 0));
         cardA.setBorder(new EmptyBorder(14, 14, 14, 14));
-        JLabel tA = new JLabel("🎓  Aprendiz");
+        JLabel tA = new JLabel("  Aprendiz");
+        tA.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_GRADUATE, 14, new Color(0x2E7D32)));
         tA.setFont(new Font("Segoe UI", Font.BOLD, 13));
         tA.setForeground(new Color(0x2E7D32));
         tA.setBorder(new EmptyBorder(0,0,10,0));
 
-        JPanel avatarA = buildAvatar(new Color(0x388E3C));
+        JPanel avatarA = buildAvatarConFoto(f.numDocAprendiz, new Color(0x388E3C), false);
         JPanel infoA = new JPanel();
         infoA.setLayout(new BoxLayout(infoA, BoxLayout.Y_AXIS));
         infoA.setOpaque(false);
@@ -485,7 +499,9 @@ public class ReportesPanel extends JPanel {
         JPanel infoRep = detalleCard();
         infoRep.setLayout(new BoxLayout(infoRep, BoxLayout.Y_AXIS));
         infoRep.setBorder(new EmptyBorder(14, 16, 14, 16));
-        JLabel tRep = new JLabel("📋  Información del Reporte");
+        JLabel tRep = new JLabel("  Información del Reporte");
+        tRep.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.INFO_CIRCLE, 14, TEXT_DARK));
         tRep.setFont(new Font("Segoe UI", Font.BOLD, 13));
         tRep.setForeground(TEXT_DARK);
         infoRep.add(tRep);
@@ -494,18 +510,22 @@ public class ReportesPanel extends JPanel {
         // Tipo con badge
         JPanel tipoRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
         tipoRow.setOpaque(false);
-        JLabel tipoK = new JLabel("🏷  Tipo de reporte:");
+        JLabel tipoIco = new JLabel();
+        tipoIco.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TAG, 12, TEXT_GRAY));
+        JLabel tipoK = new JLabel("Tipo de reporte:");
         tipoK.setFont(new Font("Segoe UI", Font.BOLD, 11)); tipoK.setForeground(TEXT_GRAY);
         JLabel tipoV = new JLabel("  " + f.motivo + "  ");
         tipoV.setFont(new Font("Segoe UI", Font.BOLD, 11));
         tipoV.setForeground(new Color(0x856404)); tipoV.setOpaque(true);
         tipoV.setBackground(new Color(0xFFF3CD));
         tipoV.setBorder(new LineBorder(new Color(0xFFC107), 1, true));
-        tipoRow.add(tipoK); tipoRow.add(tipoV);
+        tipoRow.add(tipoIco); tipoRow.add(tipoK); tipoRow.add(tipoV);
         infoRep.add(tipoRow);
 
         // Descripción
-        addInfoFilaH(infoRep, "💬  Descripción:",        f.descripcion.isEmpty() ? "—" : f.descripcion);
+        addInfoFilaH(infoRep, "  Descripción:", f.descripcion.isEmpty() ? "—" : f.descripcion,
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.COMMENT);
         infoRep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
         root.add(infoRep);
         root.add(Box.createVerticalStrut(12));
@@ -515,19 +535,19 @@ public class ReportesPanel extends JPanel {
         infoAd.setLayout(new GridLayout(2, 3, 14, 8));
         infoAd.setBorder(new EmptyBorder(14,16,14,16));
 
-        addMiniCard(infoAd, "#",  "Número de reporte:", "#" + f.idReporte,          new Color(0x3F51B5));
-        addMiniCard(infoAd, "👤", "Reportado por:",    f.nombreGuarda + "\n(" + f.tipDocGuarda + " " + f.numDocGuarda + ")", new Color(0x9C27B0));
-        addMiniCard(infoAd, "💻", "Medio de reporte:", "SAIA - Módulo de Seguridad", new Color(0x2196F3));
-        addMiniCard(infoAd, "📋", "Estado del reporte:", "Abierto",                 new Color(0x4CAF50));
-        addMiniCard(infoAd, "📅", "Fecha de creación:", fechaStr,                   new Color(0x009688));
-        addMiniCard(infoAd, "🕐", "Última actualización:", fechaStr,                new Color(0xFF9800));
+        addMiniCard(infoAd, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.HASHTAG,        "Número de reporte:", "#" + f.idReporte,          new Color(0x3F51B5));
+        addMiniCard(infoAd, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER,          "Reportado por:",    f.nombreGuarda + "\n(" + f.tipDocGuarda + " " + f.numDocGuarda + ")", new Color(0x9C27B0));
+        addMiniCard(infoAd, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.DESKTOP,       "Medio de reporte:", "SAIA - Módulo de Seguridad", new Color(0x2196F3));
+        addMiniCard(infoAd, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CLIPBOARD_CHECK, "Estado del reporte:", "Abierto",                 new Color(0x4CAF50));
+        addMiniCard(infoAd, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CALENDAR_PLUS, "Fecha de creación:", fechaStr,                   new Color(0x009688));
+        addMiniCard(infoAd, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CLOCK,         "Última actualización:", fechaStr,                new Color(0xFF9800));
         infoAd.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         root.add(infoAd);
 
         // ── Botón cerrar ──────────────────────────────────────────────────────
         JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnRow.setBackground(new Color(0xF8F9FA));
-        JButton btnCerrar = makeBtn("  Cerrar  ", NAVY, Color.WHITE, 120, 36);
+        JButton btnCerrar = UITheme.solidButton("  Cerrar  ", NAVY, 120, 36);
         btnCerrar.addActionListener(e -> dlg.dispose());
         btnRow.add(btnCerrar);
 
@@ -547,25 +567,99 @@ public class ReportesPanel extends JPanel {
         return p;
     }
 
-    /** Avatar placeholder circular con inicial. */
-    private JPanel buildAvatar(Color color) {
+    /** Avatar con foto de perfil si está disponible, o placeholder si no. */
+    private JPanel buildAvatarConFoto(int numDoc, Color color, boolean esGuardia) {
         JPanel av = new JPanel() {
+            private javax.swing.ImageIcon userPhoto = null;
+            
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 30));
-                g2.fillOval(0, 0, getWidth(), getHeight());
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
-                g2.setColor(color);
-                // Silueta de persona con formas básicas
-                g2.fillOval(20, 10, 30, 30); // cabeza
-                g2.fillArc(10, 40, 50, 30, 0, 180); // cuerpo
+                
+                if (userPhoto != null) {
+                    // Dibujar foto circular
+                    g2.setClip(new java.awt.geom.Ellipse2D.Float(0, 0, getWidth(), getHeight()));
+                    g2.drawImage(userPhoto.getImage(), 0, 0, getWidth(), getHeight(), null);
+                    g2.setClip(null);
+                    // Borde de color
+                    g2.setColor(color);
+                    g2.setStroke(new BasicStroke(2f));
+                    g2.drawOval(0, 0, getWidth()-1, getHeight()-1);
+                } else {
+                    // Placeholder genérico
+                    g2.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 30));
+                    g2.fillOval(0, 0, getWidth(), getHeight());
+                    g2.setColor(color);
+                    // Silueta de persona
+                    g2.fillOval(20, 10, 30, 30); // cabeza
+                    g2.fillArc(10, 40, 50, 30, 0, 180); // cuerpo
+                }
                 g2.dispose();
+            }
+            
+            public void setUserPhoto(javax.swing.ImageIcon icon) {
+                this.userPhoto = icon;
+                repaint();
             }
         };
         av.setOpaque(false);
         av.setPreferredSize(new Dimension(70, 70));
+        
+        // Cargar foto de forma asíncrona
+        cargarFotoUsuario(av, numDoc, esGuardia);
+        
         return av;
+    }
+    
+    /** Carga la foto del usuario (guardia o aprendiz) desde la base de datos. */
+    private void cargarFotoUsuario(JPanel avatarPanel, int numDoc, boolean esGuardia) {
+        new javax.swing.SwingWorker<javax.swing.ImageIcon, Void>() {
+            @Override
+            protected javax.swing.ImageIcon doInBackground() {
+                try {
+                    com.saia.business.ConfiguracionService configService = new com.saia.business.ConfiguracionService();
+                    java.util.Optional<com.saia.data.ConfiguracionDAO.PerfilAdmin> perfilOpt = 
+                        configService.cargarPerfil(numDoc);
+                    
+                    if (perfilOpt.isEmpty()) return null;
+                    
+                    String rutaFoto = perfilOpt.get().fotoPerfil();
+                    if (rutaFoto == null || rutaFoto.isBlank()) return null;
+                    
+                    java.io.File f = new java.io.File(rutaFoto);
+                    if (!f.exists()) return null;
+                    
+                    java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
+                    if (img == null) return null;
+                    
+                    java.awt.Image scaled = img.getScaledInstance(70, 70, java.awt.Image.SCALE_SMOOTH);
+                    return new javax.swing.ImageIcon(scaled);
+                } catch (Exception e) {
+                    System.err.println("[ReportesPanel] Error cargando foto de " + 
+                        (esGuardia ? "guardia" : "aprendiz") + ": " + e.getMessage());
+                    return null;
+                }
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    javax.swing.ImageIcon icon = get();
+                    if (icon != null && avatarPanel != null) {
+                        try {
+                            avatarPanel.getClass()
+                                .getMethod("setUserPhoto", javax.swing.ImageIcon.class)
+                                .invoke(avatarPanel, icon);
+                        } catch (Exception e) {
+                            System.err.println("[ReportesPanel] Error actualizando avatar: " + e.getMessage());
+                        }
+                    }
+                } catch (InterruptedException | java.util.concurrent.ExecutionException ex) {
+                    System.err.println("[ReportesPanel] Error obteniendo foto: " + ex.getMessage());
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }.execute();
     }
 
     /** Fila de información label: valor en BoxLayout vertical. */
@@ -578,21 +672,29 @@ public class ReportesPanel extends JPanel {
     }
 
     /** Fila horizontal label: valor para sección de reporte. */
-    private void addInfoFilaH(JPanel p, String key, String val) {
+    private void addInfoFilaH(JPanel p, String key, String val, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid iconGlyph) {
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
         row.setOpaque(false);
-        JLabel k = new JLabel(key); k.setFont(new Font("Segoe UI", Font.BOLD, 11)); k.setForeground(TEXT_GRAY);
-        JLabel v = new JLabel(val); v.setFont(new Font("Segoe UI", Font.PLAIN, 11)); v.setForeground(TEXT_DARK);
-        row.add(k); row.add(v); p.add(row);
+        JLabel ico = new JLabel();
+        ico.setIcon(com.saia.presentation.IconUtil.icon(iconGlyph, 12, TEXT_GRAY));
+        JLabel k = new JLabel(key); 
+        k.setFont(new Font("Segoe UI", Font.BOLD, 11)); 
+        k.setForeground(TEXT_GRAY);
+        JLabel v = new JLabel(val); 
+        v.setFont(new Font("Segoe UI", Font.PLAIN, 11)); 
+        v.setForeground(TEXT_DARK);
+        row.add(ico); row.add(k); row.add(v); 
+        p.add(row);
     }
 
     /** Mini tarjeta para información adicional. */
-    private void addMiniCard(JPanel grid, String ico, String titulo, String valor, Color color) {
+    private void addMiniCard(JPanel grid, org.kordamp.ikonli.fontawesome5.FontAwesomeSolid iconGlyph, String titulo, String valor, Color color) {
         JPanel c = new JPanel();
         c.setLayout(new BoxLayout(c, BoxLayout.Y_AXIS));
         c.setBackground(new Color(color.getRed(), color.getGreen(), color.getBlue(), 12));
         c.setBorder(new EmptyBorder(8, 10, 8, 10));
-        JLabel t = new JLabel(ico + " " + titulo);
+        JLabel t = new JLabel("  " + titulo);
+        t.setIcon(com.saia.presentation.IconUtil.icon(iconGlyph, 12, TEXT_GRAY));
         t.setFont(new Font("Segoe UI", Font.BOLD, 10));
         t.setForeground(TEXT_GRAY);
         JLabel v = new JLabel("<html>" + valor.replace("\n","<br>") + "</html>");
@@ -600,128 +702,6 @@ public class ReportesPanel extends JPanel {
         v.setForeground(TEXT_DARK);
         c.add(t); c.add(Box.createVerticalStrut(4)); c.add(v);
         grid.add(c);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PESTAÑA 2 — ESTADÍSTICAS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    private JPanel buildTabEstadisticas() {
-        JPanel tab = new JPanel(new BorderLayout(0, 12));
-        tab.setOpaque(false);
-        tab.setBorder(new EmptyBorder(14, 0, 0, 0));
-
-        // ── Filtros en línea ──────────────────────────────────────────────────
-        JPanel filtros = card();
-        filtros.setLayout(new FlowLayout(FlowLayout.LEFT, 12, 10));
-        filtros.setBorder(new EmptyBorder(8, 14, 8, 14));
-
-        filtros.add(label("Ver por:"));
-        cmbTipoEstad = new JComboBox<>(new String[]{"Día", "Mes", "Año"});
-        styleCombo(cmbTipoEstad, 90);
-        filtros.add(cmbTipoEstad);
-
-        // Date picker para Día
-        spDiaEstad = buildDateSpinner(LocalDate.now());
-        spDiaEstad.setPreferredSize(new Dimension(140, 32));
-        filtros.add(spDiaEstad);
-
-        // Combo Mes
-        String[] meses = {"Enero","Febrero","Marzo","Abril","Mayo","Junio",
-                          "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"};
-        cmbMesEstad = new JComboBox<>(meses);
-        cmbMesEstad.setSelectedIndex(LocalDate.now().getMonthValue() - 1);
-        styleCombo(cmbMesEstad, 120);
-        cmbMesEstad.setVisible(false);
-        filtros.add(cmbMesEstad);
-
-        // Combo Año
-        int anioAct = LocalDate.now().getYear();
-        String[] anios = new String[6];
-        for (int i = 0; i < 6; i++) anios[i] = String.valueOf(anioAct - i);
-        cmbAnioEstad = new JComboBox<>(anios);
-        styleCombo(cmbAnioEstad, 90);
-        cmbAnioEstad.setVisible(false);
-        filtros.add(cmbAnioEstad);
-
-        // Listener tipo
-        cmbTipoEstad.addActionListener(e -> actualizarControlesEstad(filtros));
-
-        // Botones
-        JButton btnCargar = makeBtn("📊 Cargar",    NAVY,                Color.WHITE, 105, 32);
-        JButton btnTodos  = makeBtn("🔄 Mostrar todos", new Color(0x6C757D), Color.WHITE, 135, 32);
-        btnCargar.addActionListener(e -> cargarEstadisticas());
-        btnTodos.addActionListener(e -> cargarEstadisticasTodas());
-        filtros.add(btnCargar);
-        filtros.add(btnTodos);
-        tab.add(filtros, BorderLayout.NORTH);
-
-        // ── Cuerpo: Totales + Gráfico + Resumen ───────────────────────────────
-        JPanel body = new JPanel(new BorderLayout(14, 0));
-        body.setOpaque(false);
-
-        // Izquierda: totales
-        JPanel left = card();
-        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-        left.setBorder(new EmptyBorder(16,16,16,16));
-        left.setPreferredSize(new Dimension(185, 0));
-        addSection(left, "Totales");
-        left.add(Box.createVerticalStrut(12));
-        lblTotalI = stat(left, "Total Ingresos", new Color(0x1565C0));
-        left.add(Box.createVerticalStrut(8));
-        lblTotalS = stat(left, "Total Salidas",  new Color(0x2E7D32));
-        left.add(Box.createVerticalStrut(8));
-        lblNetos  = stat(left, "Netos",          new Color(0xE65100));
-        left.add(Box.createVerticalGlue());
-
-        // Centro: gráfico
-        grafico = new GraficoLineas();
-        JPanel graficoCard = card();
-        graficoCard.setLayout(new BorderLayout());
-        graficoCard.setBorder(new EmptyBorder(14, 14, 14, 14));
-        JLabel tGraf = new JLabel("Ingresos y Salidas por Período");
-        tGraf.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tGraf.setForeground(TEXT_DARK);
-        tGraf.setBorder(new EmptyBorder(0,0,8,0));
-        graficoCard.add(tGraf,  BorderLayout.NORTH);
-        graficoCard.add(grafico, BorderLayout.CENTER);
-
-        // Derecha: resumen
-        JPanel right = card();
-        right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
-        right.setBorder(new EmptyBorder(16,16,16,16));
-        right.setPreferredSize(new Dimension(225, 0));
-        JLabel rTit = new JLabel("Resumen por período");
-        rTit.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        rTit.setForeground(TEXT_DARK);
-        right.add(rTit);
-        right.add(Box.createVerticalStrut(4));
-        lblResumenTitulo = new JLabel("—");
-        lblResumenTitulo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblResumenTitulo.setForeground(TEXT_GRAY);
-        right.add(lblResumenTitulo);
-        right.add(Box.createVerticalStrut(14));
-        lblResI   = resumenFila(right, "📥 Total Ingresos",      new Color(0x1565C0));
-        lblResS   = resumenFila(right, "📤 Total Salidas",        new Color(0x2E7D32));
-        lblResPDI = resumenFila(right, "📅 Prom. Diario Ingr.",  new Color(0x0D47A1));
-        lblResPDS = resumenFila(right, "📅 Prom. Diario Sal.",   new Color(0x1B5E20));
-        lblResDif = resumenFila(right, "↗ Diferencia Neta",     new Color(0xE65100));
-        right.add(Box.createVerticalGlue());
-
-        body.add(left,       BorderLayout.WEST);
-        body.add(graficoCard, BorderLayout.CENTER);
-        body.add(right,      BorderLayout.EAST);
-        tab.add(body, BorderLayout.CENTER);
-        return tab;
-    }
-
-    /** Muestra/oculta controles de estadísticas según tipo seleccionado. */
-    private void actualizarControlesEstad(JPanel p) {
-        String tipo = (String) cmbTipoEstad.getSelectedItem();
-        spDiaEstad.setVisible("Día".equals(tipo));
-        cmbMesEstad.setVisible("Mes".equals(tipo));
-        cmbAnioEstad.setVisible("Mes".equals(tipo) || "Año".equals(tipo));
-        p.revalidate(); p.repaint();
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -740,10 +720,6 @@ public class ReportesPanel extends JPanel {
         super.addNotify();
         // Carga inicial de reportes
         SwingUtilities.invokeLater(this::cargarTodosReportes);
-        // Estadísticas del día actual por defecto
-        SwingUtilities.invokeLater(() ->
-            ejecutarEstadisticas(LocalDate.now(), LocalDate.now(), "Diaria",
-                    LocalDate.now().format(FMT_DATE)));
     }
 
     private void buscarReportes() {
@@ -832,91 +808,6 @@ public class ReportesPanel extends JPanel {
         w.execute();
     }
 
-    private void cargarEstadisticas() {
-        String tipo = (String) cmbTipoEstad.getSelectedItem();
-        LocalDate desde, hasta;
-        String label;
-
-        switch (tipo) {
-            case "Día" -> {
-                LocalDate dia = getSpinnerDate(spDiaEstad);
-                desde = dia; hasta = dia;
-                label = dia.format(FMT_DATE);
-            }
-            case "Mes" -> {
-                int mes  = cmbMesEstad.getSelectedIndex() + 1;
-                int anio = Integer.parseInt((String) cmbAnioEstad.getSelectedItem());
-                desde = LocalDate.of(anio, mes, 1);
-                hasta = desde.withDayOfMonth(desde.lengthOfMonth());
-                label = cmbMesEstad.getSelectedItem() + " " + anio;
-            }
-            case "Año" -> {
-                int anio = Integer.parseInt((String) cmbAnioEstad.getSelectedItem());
-                desde = LocalDate.of(anio, 1, 1);
-                hasta = LocalDate.of(anio, 12, 31);
-                label = String.valueOf(anio);
-            }
-            default -> { desde = LocalDate.now().minusYears(5); hasta = LocalDate.now(); label = "Todo el período"; }
-        }
-        ejecutarEstadisticas(desde, hasta, tipo, label);
-    }
-
-    private void cargarEstadisticasTodas() {
-        // Últimos 5 años agrupado por mes
-        LocalDate desde = LocalDate.now().minusYears(5);
-        LocalDate hasta = LocalDate.now();
-        ejecutarEstadisticas(desde, hasta, "Mensual", "Todo el período");
-    }
-
-    private void ejecutarEstadisticas(LocalDate desde, LocalDate hasta, String tipo, String labelPeriodo) {
-        // Mapear tipo de vista al método de agrupación
-        String tipoAgrup = switch (tipo) {
-            case "Mes", "Mensual" -> "Mensual";
-            case "Año", "Anual"   -> "Anual";
-            default               -> "Diaria";
-        };
-        final String labelFinal = labelPeriodo;
-        final String agrup      = tipoAgrup;
-        final LocalDate d = desde, h = hasta;
-
-        SwingWorker<Object[], Void> w = new SwingWorker<>() {
-            @Override protected Object[] doInBackground() {
-                return new Object[]{
-                    dao.getEstadisticasPorPeriodo(d, h, agrup),
-                    dao.getResumen(d, h)
-                };
-            }
-            @Override protected void done() {
-                try {
-                    Object[] r = get();
-                    @SuppressWarnings("unchecked")
-                    List<EstadisticaPunto> pts = (List<EstadisticaPunto>) r[0];
-                    ResumenPeriodo res = (ResumenPeriodo) r[1];
-                    int netos = res.totalIngresos - res.totalSalidas;
-
-                    // Panel izquierdo
-                    lblTotalI.setText(String.valueOf(res.totalIngresos));
-                    lblTotalS.setText(String.valueOf(res.totalSalidas));
-                    lblNetos.setText((netos >= 0 ? "+" : "") + netos);
-
-                    // Panel derecho
-                    lblResumenTitulo.setText(labelFinal);
-                    lblResI.setText(String.valueOf(res.totalIngresos));
-                    lblResS.setText(String.valueOf(res.totalSalidas));
-                    lblResPDI.setText(String.valueOf(res.promedioDiarioIngresos));
-                    lblResPDS.setText(String.valueOf(res.promedioDiarioSalidas));
-                    lblResDif.setText((netos >= 0 ? "+" : "") + netos);
-
-                    // Gráfico
-                    grafico.setData(pts, agrup);
-                } catch (InterruptedException | ExecutionException ex) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        };
-        w.execute();
-    }
-
     // ═══════════════════════════════════════════════════════════════════════════
     // HELPERS UI
     // ═══════════════════════════════════════════════════════════════════════════
@@ -945,14 +836,6 @@ public class ReportesPanel extends JPanel {
         return l;
     }
 
-    private void addSection(JPanel p, String txt) {
-        JLabel l = new JLabel(txt);
-        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        l.setForeground(TEXT_DARK);
-        l.setAlignmentX(Component.LEFT_ALIGNMENT);
-        p.add(l); p.add(Box.createVerticalStrut(4));
-    }
-
     private void styleCombo(JComboBox<String> c, int w) {
         c.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         c.setBackground(Color.WHITE);
@@ -978,50 +861,5 @@ public class ReportesPanel extends JPanel {
     private LocalDate getSpinnerDate(JSpinner s) {
         java.util.Date d = (java.util.Date) s.getValue();
         return d.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
-    }
-
-    private JLabel stat(JPanel p, String lbl, Color color) {
-        JPanel row = new JPanel(new BorderLayout());
-        row.setOpaque(false); row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        JLabel k = new JLabel(lbl); k.setFont(new Font("Segoe UI", Font.PLAIN, 12)); k.setForeground(TEXT_DARK);
-        JLabel v = new JLabel("—"); v.setFont(new Font("Segoe UI", Font.BOLD, 18)); v.setForeground(color);
-        v.setHorizontalAlignment(SwingConstants.RIGHT);
-        row.add(k, BorderLayout.WEST); row.add(v, BorderLayout.EAST); p.add(row);
-        return v;
-    }
-
-    private JLabel resumenFila(JPanel p, String lbl, Color color) {
-        JPanel row = new JPanel(new BorderLayout()); row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
-        row.setBorder(new EmptyBorder(3,0,3,0));
-        JLabel k = new JLabel(lbl); k.setFont(new Font("Segoe UI", Font.PLAIN, 11)); k.setForeground(TEXT_GRAY);
-        JLabel v = new JLabel("—"); v.setFont(new Font("Segoe UI", Font.BOLD, 14)); v.setForeground(color);
-        v.setHorizontalAlignment(SwingConstants.RIGHT);
-        row.add(k, BorderLayout.WEST); row.add(v, BorderLayout.EAST);
-        p.add(row); p.add(Box.createVerticalStrut(2));
-        return v;
-    }
-
-    private static JButton makeBtn(String text, Color bg, Color fg, int w, int h) {
-        JButton btn = new JButton(text) {
-            boolean hov = false;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true;  repaint(); }
-                @Override public void mouseExited (MouseEvent e) { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hov ? bg.darker() : bg);
-                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12)); btn.setForeground(fg);
-        btn.setOpaque(false); btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false); btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setMaximumSize(new Dimension(w, h)); btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return btn;
     }
 }

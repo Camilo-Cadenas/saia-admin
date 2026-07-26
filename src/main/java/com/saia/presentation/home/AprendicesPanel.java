@@ -12,8 +12,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +43,7 @@ import com.saia.business.AprendizService;
 import com.saia.business.AprendizService.EstadoResult;
 import com.saia.model.Aprendiz;
 import com.saia.model.Persona;
+import com.saia.presentation.UITheme;
 
 /**
  * Panel de gestión de Aprendices.
@@ -125,7 +124,7 @@ public class AprendicesPanel extends JPanel {
         txtBuscarFicha.getDocument().addDocumentListener(dl);
         txtBuscarPrograma.getDocument().addDocumentListener(dl);
 
-        JButton btnRefresh = buildBtn("  Actualizar", NAVY, Color.WHITE, 120);
+        JButton btnRefresh = UITheme.solidButton("  Actualizar", NAVY, 120, 36);
         btnRefresh.setIcon(com.saia.presentation.IconUtil.refresh());
         btnRefresh.addActionListener(e -> cargarDatos());
 
@@ -252,6 +251,18 @@ public class AprendicesPanel extends JPanel {
 
     private JTable buildTable() {
         JTable t = new JTable(tableModel);
+        
+        // Renderer centrado para todas las columnas de texto
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        // Aplicar centrado a todas las columnas excepto Acción
+        for (int i = 0; i < COLS.length - 1; i++) {
+            if (i != 9) { // Col 9 ya tiene EstadoRenderer que incluye centrado
+                t.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+            }
+        }
+        
         // Columna Estado (índice 9) con badge
         t.getColumnModel().getColumn(9).setCellRenderer(new EstadoRenderer());
         // Columna Acción (índice 10)
@@ -481,29 +492,5 @@ public class AprendicesPanel extends JPanel {
         String a = nvl(p.getPApe());
         if (p.getSApe() != null && !p.getSApe().isBlank()) a += " " + p.getSApe();
         return a.trim();
-    }
-
-    private static JButton buildBtn(String text, Color bg, Color fg, int w) {
-        JButton btn = new JButton(text) {
-            boolean hov = false;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true;  repaint(); }
-                @Override public void mouseExited (MouseEvent e) { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hov ? bg.darker() : bg);
-                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setForeground(fg);
-        btn.setOpaque(false); btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false); btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(w, 34));
-        return btn;
     }
 }

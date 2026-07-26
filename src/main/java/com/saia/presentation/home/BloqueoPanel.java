@@ -12,8 +12,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +43,7 @@ import javax.swing.text.DocumentFilter;
 import com.saia.business.BloqueoService;
 import com.saia.business.BloqueoService.HabilitarResult;
 import com.saia.data.UsuarioBloqueadoDAO.UsuarioBloqueado;
+import com.saia.presentation.UITheme;
 
 /**
  * Panel "Usuarios Bloqueados".
@@ -103,9 +102,11 @@ public class BloqueoPanel extends JPanel {
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(0, 0, 14, 0));
 
-        JLabel titulo = new JLabel("Usuarios Bloqueados");
+        JLabel titulo = new JLabel("  Usuarios Bloqueados");
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titulo.setForeground(TEXT_DARK);
+        titulo.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_SLASH, 18, TEXT_DARK));
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         right.setOpaque(false);
@@ -154,7 +155,7 @@ public class BloqueoPanel extends JPanel {
         cmbRol.setPreferredSize(new Dimension(190, 34));
         cmbRol.addActionListener(e -> filtrar());
 
-        JButton btnRefresh = makeBtn("  Actualizar", NAVY, Color.WHITE, 120);
+        JButton btnRefresh = UITheme.solidButton("  Actualizar", NAVY, 120, 36);
         btnRefresh.setIcon(com.saia.presentation.IconUtil.refresh());
         btnRefresh.addActionListener(e -> cargarDatos());
 
@@ -380,10 +381,6 @@ public class BloqueoPanel extends JPanel {
     private static String nvl(String v)           { return v != null ? v : ""; }
     private static String nvl(String v, String d) { return (v != null && !v.isBlank()) ? v : d; }
 
-    private static JButton makeStaticBtn(String text, Color bg) {
-        return makeStaticBtn(text, bg, null);
-    }
-
     private static JButton makeStaticBtn(String text, Color bg, javax.swing.Icon icon) {
         JButton b = new JButton(text);
         if (icon != null) { b.setIcon(icon); b.setIconTextGap(4); }
@@ -392,28 +389,5 @@ public class BloqueoPanel extends JPanel {
         b.setOpaque(true); b.setBorderPainted(false); b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
-    }
-
-    private static JButton makeBtn(String text, Color bg, Color fg, int w) {
-        JButton btn = new JButton(text) {
-            boolean hov = false;
-            { addMouseListener(new MouseAdapter() {
-                @Override public void mouseEntered(MouseEvent e) { hov = true;  repaint(); }
-                @Override public void mouseExited (MouseEvent e) { hov = false; repaint(); }
-            }); }
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(hov ? bg.darker() : bg);
-                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
-                g2.dispose(); super.paintComponent(g);
-            }
-        };
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12)); btn.setForeground(fg);
-        btn.setOpaque(false); btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false); btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(w, 34));
-        return btn;
     }
 }

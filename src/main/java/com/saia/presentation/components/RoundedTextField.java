@@ -20,7 +20,7 @@ public class RoundedTextField extends JTextField {
     private String placeholder;
     private Color borderColor = com.saia.presentation.UITheme.BORDER;
     private Color focusBorderColor = com.saia.presentation.UITheme.PRIMARY;
-    private Color placeholderColor = new Color(0xAAAAAA);
+    private final Color placeholderColor = new Color(0xAAAAAA);
     private int radius;
     private boolean isFocused = false;
 

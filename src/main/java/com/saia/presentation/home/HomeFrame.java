@@ -14,12 +14,19 @@ import java.awt.FontMetrics;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.Optional;
 
+import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,9 +35,12 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
 import com.saia.business.AuthService;
+import com.saia.business.ConfiguracionService;
+import com.saia.data.ConfiguracionDAO.PerfilAdmin;
 import com.saia.presentation.IconUtil;
 import com.saia.presentation.UITheme;
 import com.saia.presentation.components.SidebarButton;
@@ -56,7 +66,6 @@ import com.saia.util.SessionManager;
 public class HomeFrame extends JFrame {
 
     // ── Colores ───────────────────────────────────────────────────────────────
-    private static final Color GREEN_DARK  = UITheme.TOPBAR_START;
     private static final Color SIDEBAR_BG  = Color.WHITE;
     private static final Color BORDER_C    = UITheme.BORDER;
     private static final Color TEXT_GRAY   = UITheme.TEXT_SECONDARY;
@@ -71,6 +80,7 @@ public class HomeFrame extends JFrame {
     private static final String PAGE_ESTADISTICAS= "ESTADISTICAS";
     private static final String PAGE_DESCARGA    = "DESCARGA";
     private static final String PAGE_AUDITORIA   = "AUDITORIA";
+    private static final String PAGE_CONFIG      = "CONFIG";
 
     private final CardLayout  cardLayout  = new CardLayout();
     private final JPanel      contentArea = new JPanel(cardLayout);
@@ -84,6 +94,7 @@ public class HomeFrame extends JFrame {
     private EstadisticasPanel      estadisticasPanel;
     private DescargaReportesPanel  descargaPanel;
     private HistorialAuditoriaPanel auditoriaPanel;
+    private ConfiguracionPanel      configuracionPanel;
 
     // Sidebar buttons (para manejar el estado activo)
     private SidebarButton btnInicio;
@@ -96,11 +107,16 @@ public class HomeFrame extends JFrame {
     private SidebarButton btnEstadisticas;
     private SidebarButton btnConfig;
     private final AuthService authService = new AuthService();
+    private final ConfiguracionService configService = new ConfiguracionService();
+    
+    // Panel de avatar en la barra superior
+    private JPanel userAvatarPanel;
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public HomeFrame() {
         initFrame();
         buildUI();
+        cargarFotoUsuario(); // Cargar foto del usuario
         navigate(PAGE_INICIO);
         setVisible(true);
     }
@@ -109,10 +125,11 @@ public class HomeFrame extends JFrame {
         setTitle("SAIA - Sistema de Autogestión de Aprendices SENA");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(1100, 680));
-        setSize(1280, 750);
-        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
-
+        
+        // Configurar pantalla completa
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -199,35 +216,23 @@ public class HomeFrame extends JFrame {
         // ── Centro: nombre sección activa ─────────────────────────────────────
         JPanel center = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 18));
         center.setOpaque(false);
-        JLabel menuIcon = new JLabel("\u2630");
-        menuIcon.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-        menuIcon.setForeground(Color.WHITE);
-        JLabel pageLabel = new JLabel("Inicio");
+        
+        JLabel pageLabel = new JLabel("  Inicio");
         pageLabel.setFont(UITheme.FONT_SECTION);
         pageLabel.setForeground(Color.WHITE);
+        pageLabel.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.HOME, 16, Color.WHITE));
         pageLabel.setName("pageLabel");
-        center.add(menuIcon);
+        
         center.add(pageLabel);
 
-        // ── Derecha: campana + perfil ─────────────────────────────────────────
+        // ── Derecha: perfil de usuario ───────────────────────────────────────
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 14));
         right.setOpaque(false);
 
-        JLabel bell = new JLabel();
-        bell.setIcon(com.saia.presentation.IconUtil.icon(
-            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.BELL, 18, java.awt.Color.WHITE));
-        bell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        JSeparator sep = new JSeparator(JSeparator.VERTICAL);
-        sep.setPreferredSize(new Dimension(1, 28));
-        sep.setForeground(new Color(255,255,255,80));
-
         JPanel userChip = buildUserChip();
 
-        right.add(bell);
-        right.add(sep);
         right.add(userChip);
-        right.setBorder(new EmptyBorder(0, 0, 0, 8));
+        right.setBorder(new EmptyBorder(0, 0, 0, 16));
 
         bar.add(left,   BorderLayout.WEST);
         bar.add(center, BorderLayout.CENTER);
@@ -236,24 +241,45 @@ public class HomeFrame extends JFrame {
     }
 
     private JPanel buildUserChip() {
-        JPanel chip = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel chip = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         chip.setOpaque(false);
         chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        JPanel avatar = new JPanel() {
+        // Avatar con foto del usuario
+        userAvatarPanel = new JPanel() {
+            private ImageIcon userPhoto = null;
+            
+            public void actualizarFoto(ImageIcon icon) {
+                this.userPhoto = icon;
+                repaint();
+            }
+            
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(new Color(255,255,255,50));
-                g2.fillOval(0, 0, 32, 32);
-                g2.setColor(Color.WHITE);
-                g2.fillOval(10, 4,  12, 12);
-                g2.fillArc (7,  18, 18, 14, 0, 180);
+                
+                if (userPhoto != null) {
+                    // Dibujar foto circular
+                    g2.setClip(new Ellipse2D.Float(0, 0, 32, 32));
+                    g2.drawImage(userPhoto.getImage(), 0, 0, 32, 32, null);
+                    g2.setClip(null);
+                    // Borde blanco
+                    g2.setColor(Color.WHITE);
+                    g2.setStroke(new BasicStroke(2f));
+                    g2.drawOval(0, 0, 32, 32);
+                } else {
+                    // Ícono genérico si no hay foto
+                    g2.setColor(new Color(255,255,255,50));
+                    g2.fillOval(0, 0, 32, 32);
+                    g2.setColor(Color.WHITE);
+                    g2.fillOval(10, 4,  12, 12);
+                    g2.fillArc (7,  18, 18, 14, 0, 180);
+                }
                 g2.dispose();
             }
         };
-        avatar.setOpaque(false);
-        avatar.setPreferredSize(new Dimension(32, 32));
+        userAvatarPanel.setOpaque(false);
+        userAvatarPanel.setPreferredSize(new Dimension(32, 32));
 
         String nombre = SessionManager.getInstance().getAdminNombre();
         JPanel info = new JPanel();
@@ -271,9 +297,61 @@ public class HomeFrame extends JFrame {
         info.add(nameLbl);
         info.add(roleLbl);
 
-        chip.add(avatar);
+        chip.add(userAvatarPanel);
         chip.add(info);
         return chip;
+    }
+    
+    /**
+     * Carga la foto del usuario desde el perfil en la base de datos para mostrarla en la barra superior.
+     */
+    private void cargarFotoUsuario() {
+        int numDoc = SessionManager.getInstance().getAdmin().getNumDoc();
+        
+        new SwingWorker<ImageIcon, Void>() {
+            @Override
+            protected ImageIcon doInBackground() {
+                Optional<PerfilAdmin> perfilOpt = configService.cargarPerfil(numDoc);
+                if (perfilOpt.isEmpty()) return null;
+                
+                String rutaFoto = perfilOpt.get().fotoPerfil();
+                if (rutaFoto == null || rutaFoto.isBlank()) return null;
+                
+                try {
+                    File f = new File(rutaFoto);
+                    if (!f.exists()) return null;
+                    
+                    BufferedImage img = ImageIO.read(f);
+                    if (img == null) return null;
+                    
+                    Image scaled = img.getScaledInstance(32, 32, Image.SCALE_SMOOTH);
+                    return new ImageIcon(scaled);
+                } catch (Exception e) {
+                    System.err.println("[HomeFrame] Error cargando foto: " + e.getMessage());
+                    return null;
+                }
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    ImageIcon icon = get();
+                    if (icon != null && userAvatarPanel != null) {
+                        // Llamar al método actualizarFoto usando reflection
+                        try {
+                            userAvatarPanel.getClass()
+                                .getMethod("actualizarFoto", ImageIcon.class)
+                                .invoke(userAvatarPanel, icon);
+                        } catch (Exception e) {
+                            System.err.println("[HomeFrame] Error actualizando avatar: " + e.getMessage());
+                        }
+                    }
+                } catch (InterruptedException | java.util.concurrent.ExecutionException ex) {
+                    System.err.println("[HomeFrame] Error obteniendo foto: " + ex.getMessage());
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }.execute();
     }
 
     // ── Sidebar ───────────────────────────────────────────────────────────────
@@ -359,7 +437,7 @@ public class HomeFrame extends JFrame {
 
         btnConfig = navBtn("  Configuración del Sistema",
             IconUtil.navConfig(), IconUtil.navConfigActive());
-        btnConfig.addActionListener(e -> showComingSoon("Configuración"));
+        btnConfig.addActionListener(e -> navigate(PAGE_CONFIG));
         sidebar.add(btnConfig);
 
         // Espacio flexible
@@ -402,12 +480,6 @@ public class HomeFrame extends JFrame {
         return sidebar;
     }
 
-    private SidebarButton navBtn(String text) {
-        SidebarButton btn = new SidebarButton(text);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        return btn;
-    }
-
     /** Crea un botón de sidebar con iconos Ikonli para estado normal y activo. */
     private SidebarButton navBtn(String text,
             org.kordamp.ikonli.swing.FontIcon normalIcon,
@@ -439,7 +511,7 @@ public class HomeFrame extends JFrame {
         footer.setBackground(Color.WHITE);
         footer.setPreferredSize(new Dimension(0, 28));
 
-        JLabel copy = new JLabel("© 2025 - SENA. Todos los derechos reservados.",
+        JLabel copy = new JLabel("© 2026 - S.A.I.A. Todos los derechos reservados.",
                 SwingConstants.CENTER);
         copy.setFont(UITheme.FONT_CAPTION);
         copy.setForeground(TEXT_GRAY);
@@ -510,6 +582,12 @@ public class HomeFrame extends JFrame {
                     contentArea.add(auditoriaPanel, PAGE_AUDITORIA);
                 }
             }
+            case PAGE_CONFIG -> {
+                if (configuracionPanel == null) {
+                    configuracionPanel = new ConfiguracionPanel();
+                    contentArea.add(configuracionPanel, PAGE_CONFIG);
+                }
+            }
         }
 
         cardLayout.show(contentArea, page);
@@ -538,6 +616,7 @@ public class HomeFrame extends JFrame {
             case PAGE_DESCARGA     -> { if (btnDescargar     != null) btnDescargar.setActive(true); }
             case PAGE_ESTADISTICAS -> { if (btnEstadisticas  != null) btnEstadisticas.setActive(true); }
             case PAGE_AUDITORIA    -> { if (btnAuditoria     != null) btnAuditoria.setActive(true); }
+            case PAGE_CONFIG       -> { if (btnConfig        != null) btnConfig.setActive(true); }
         }
     }
 
@@ -550,15 +629,46 @@ public class HomeFrame extends JFrame {
         for (Component comp : c.getComponents()) {
             if (comp instanceof JLabel lbl && "pageLabel".equals(lbl.getName())) {
                 switch (page) {
-                    case PAGE_INICIO       -> lbl.setText("Inicio");
-                    case PAGE_PERSONAL     -> lbl.setText("Personal de Seguridad");
-                    case PAGE_APRENDICES   -> lbl.setText("Aprendices");
-                    case PAGE_BLOQUEO      -> lbl.setText("Bloqueo de Usuarios");
-                    case PAGE_REPORTES     -> lbl.setText("Gestión de Reportes");
-                    case PAGE_ESTADISTICAS -> lbl.setText("Estadísticas de Ingresos/Salidas");
-                    case PAGE_DESCARGA     -> lbl.setText("Descarga de Reportes");
-                    case PAGE_AUDITORIA    -> lbl.setText("Historial de Auditoría");
-                    default                -> lbl.setText(page);
+                    case PAGE_INICIO       -> {
+                        lbl.setText("  Inicio");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.HOME, 16, Color.WHITE));
+                    }
+                    case PAGE_PERSONAL     -> {
+                        lbl.setText("  Personal de Seguridad");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_SHIELD, 16, Color.WHITE));
+                    }
+                    case PAGE_APRENDICES   -> {
+                        lbl.setText("  Aprendices");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_GRADUATE, 16, Color.WHITE));
+                    }
+                    case PAGE_BLOQUEO      -> {
+                        lbl.setText("  Bloqueo de Usuarios");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.USER_SLASH, 16, Color.WHITE));
+                    }
+                    case PAGE_REPORTES     -> {
+                        lbl.setText("  Gestión de Reportes");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.FILE_ALT, 16, Color.WHITE));
+                    }
+                    case PAGE_ESTADISTICAS -> {
+                        lbl.setText("  Estadísticas de Ingresos/Salidas");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CHART_BAR, 16, Color.WHITE));
+                    }
+                    case PAGE_DESCARGA     -> {
+                        lbl.setText("  Descarga de Reportes");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.FILE_DOWNLOAD, 16, Color.WHITE));
+                    }
+                    case PAGE_AUDITORIA    -> {
+                        lbl.setText("  Historial de Auditoría");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.HISTORY, 16, Color.WHITE));
+                    }
+                    case PAGE_CONFIG       -> {
+                        lbl.setText("  Configuración del Sistema");
+                        lbl.setIcon(IconUtil.icon(org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.COG, 16, Color.WHITE));
+                    }
+                    default                -> {
+                        lbl.setText(page);
+                        lbl.setIcon(null);
+                    }
                 }
                 return;
             }
@@ -590,11 +700,5 @@ public class HomeFrame extends JFrame {
                 authService.logout();
             System.exit(0);
         }
-    }
-
-    private void showComingSoon(String modulo) {
-        JOptionPane.showMessageDialog(this,
-                "El módulo \"" + modulo + "\" estará disponible próximamente.",
-                "En desarrollo", JOptionPane.INFORMATION_MESSAGE);
     }
 }
