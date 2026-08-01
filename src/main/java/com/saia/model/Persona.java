@@ -22,6 +22,7 @@ public class Persona {
     private String genero;          // VARCHAR(20)  ← antes "sexo"
     private LocalDate fechaNac;     // DATE
     private String email;           // VARCHAR(255)
+    private String fotoPerfil;      // VARCHAR(500) - Ruta a la imagen de perfil
 
     public Persona() {}
 
@@ -56,6 +57,9 @@ public class Persona {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getFotoPerfil() { return fotoPerfil; }
+    public void setFotoPerfil(String fotoPerfil) { this.fotoPerfil = fotoPerfil; }
 
     // ── Compatibilidad con código antiguo que usaba getSexo() ────────────────
     /** @deprecated usar {@link #getGenero()} */

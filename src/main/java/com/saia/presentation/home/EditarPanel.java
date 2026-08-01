@@ -108,12 +108,12 @@ class EditarPanel extends BaseFormPanel {
         txtNumDoc.setForeground(new Color(0x333333));
 
         // Datos personales
-        setField(txtNombres,   p.getNombres(), "Ej: Carlos Andrés");
+        setField(txtNombres,   p.getNombres(), "Personal Seguridad");
         String apes = (p.getPApe() != null ? p.getPApe() : "")
                     + (p.getSApe() != null && !p.getSApe().isBlank() ? " " + p.getSApe() : "");
-        setField(txtApellidos, apes.trim(), "Ej: López Martínez");
+        setField(txtApellidos, apes.trim(), "Personal Seguridad");
         setField(txtEmail,     p.getEmail(), "ejemplo@correo.com");
-        setField(txtTelefono,  p.getTel()  != null ? p.getTel() : "", "Ej: 3001234567");
+        setField(txtTelefono,  p.getTel()  != null ? p.getTel() : "", "3001234567");
 
         // Fecha de nacimiento
         if (p.getFechaNac() != null) {
@@ -134,7 +134,7 @@ class EditarPanel extends BaseFormPanel {
 
         // Datos de guardia
         setField(txtEmpresa, g.getEmpresaSeg() != null ? g.getEmpresaSeg() : "",
-                "Ej: Seguridad Total S.A.S");
+                "Empresa Seguridad");
 
         // Turno
         cmbTurno.setSelectedIndex(0);
@@ -154,6 +154,13 @@ class EditarPanel extends BaseFormPanel {
             );
         } catch (Exception ex) {
             cmbEstado.setSelectedIndex(0); // fallback Activo
+        }
+        
+        // Cargar foto de perfil si existe
+        if (p.getFotoPerfil() != null && !p.getFotoPerfil().isBlank()) {
+            cargarFotoExistente(p.getFotoPerfil());
+        } else {
+            eliminarFoto();
         }
     }
 
@@ -182,33 +189,75 @@ class EditarPanel extends BaseFormPanel {
     }
 
     private void guardar() {
-        // Validar campos obligatorios
-        String nombres = val(txtNombres, "Ej: Carlos Andrés");
-        if (nombres.isEmpty()) { markError(txtNombres); showError("Los nombres son obligatorios."); return; }
+        // ── Validaciones de Seguridad ─────────────────────────────────────────
+        
+        // Validar nombres
+        String nombres = val(txtNombres, "Personal Seguridad");
+        if (nombres.isEmpty()) { 
+            markError(txtNombres); 
+            showError("Los nombres son obligatorios."); 
+            return; 
+        }
+        if (!InputValidator.isValidLength(nombres, InputValidator.MAX_NOMBRES)) {
+            markError(txtNombres);
+            showError(InputValidator.getLengthErrorMessage("Nombres", InputValidator.MAX_NOMBRES));
+            return;
+        }
         clearError(txtNombres);
 
-        String apelRaw = val(txtApellidos, "Ej: López Martínez");
-        if (apelRaw.isEmpty()) { markError(txtApellidos); showError("El apellido es obligatorio."); return; }
+        // Validar apellidos
+        String apelRaw = val(txtApellidos, "Personal Seguridad");
+        if (apelRaw.isEmpty()) { 
+            markError(txtApellidos); 
+            showError("El apellido es obligatorio."); 
+            return; 
+        }
+        if (!InputValidator.isValidLength(apelRaw, InputValidator.MAX_APELLIDOS)) {
+            markError(txtApellidos);
+            showError(InputValidator.getLengthErrorMessage("Apellidos", InputValidator.MAX_APELLIDOS));
+            return;
+        }
         clearError(txtApellidos);
 
+        // Validar email
         String email = val(txtEmail, "ejemplo@correo.com");
-        if (email.isEmpty()) { markError(txtEmail); showError("El correo electrónico es obligatorio."); return; }
-        if (!validateEmail(email)) {
+        if (email.isEmpty()) { 
+            markError(txtEmail); 
+            showError("El correo electrónico es obligatorio."); 
+            return; 
+        }
+        if (!InputValidator.isValidEmail(email)) {
             markError(txtEmail);
-            showError("El formato del correo no es válido.\nEjemplo: usuario@dominio.com"); return;
+            showError("El formato del correo no es válido.\n" +
+                     "Ejemplo: usuario@dominio.com\n" +
+                     "Máximo: " + InputValidator.MAX_EMAIL + " caracteres");
+            return;
         }
         clearError(txtEmail);
 
-        // Construir objetos
+        // Validar teléfono (opcional)
+        String tel = val(txtTelefono, "3001234567");
+        if (!tel.isEmpty() && !InputValidator.isValidTelefono(tel)) {
+            markError(txtTelefono);
+            showError("El teléfono debe contener entre 7 y 20 dígitos numéricos.");
+            return;
+        }
+        clearError(txtTelefono);
+
+        // ── Construir objetos ──────────────────────────────────────────────────
         Persona persona = new Persona();
         persona.setNumDoc(numDocActual);
         persona.setTipDoc((String) cmbTipDoc.getSelectedItem());
-        persona.setNombres(nombres);
+        
+        // Sanitizar datos antes de guardar
+        persona.setNombres(InputValidator.sanitize(nombres));
+        
         String[] apes = apelRaw.split("\\s+", 2);
-        persona.setPApe(apes[0]);
-        persona.setSApe(apes.length > 1 ? apes[1] : null);
-        persona.setEmail(email);
-        String tel = val(txtTelefono, "Ej: 3001234567");
+        persona.setPApe(InputValidator.sanitize(apes[0]));
+        persona.setSApe(apes.length > 1 ? InputValidator.sanitize(apes[1]) : null);
+        
+        persona.setEmail(email.toLowerCase().trim()); // Email en minúsculas
+        
         if (!tel.isEmpty()) persona.setTel(tel);
         if (fechaSeleccionada != null) persona.setFechaNac(fechaSeleccionada);
 
@@ -223,11 +272,40 @@ class EditarPanel extends BaseFormPanel {
         guardia.setNumDoc(numDocActual);
         String turno = (String) cmbTurno.getSelectedItem();
         guardia.setTurno("-- Seleccione turno --".equals(turno) ? null : turno);
-        String empresa = val(txtEmpresa, "Ej: Seguridad Total S.A.S");
-        guardia.setEmpresaSeg(empresa.isEmpty() ? null : empresa);
+        
+        String empresa = val(txtEmpresa, "Empresa Seguridad");
+        if (!empresa.isEmpty()) {
+            if (!InputValidator.isValidLength(empresa, InputValidator.MAX_EMPRESA)) {
+                markError(txtEmpresa);
+                showError(InputValidator.getLengthErrorMessage("Empresa de Seguridad", InputValidator.MAX_EMPRESA));
+                return;
+            }
+            guardia.setEmpresaSeg(InputValidator.sanitize(empresa));
+        } else {
+            guardia.setEmpresaSeg(null);
+        }
+        clearError(txtEmpresa);
 
         // Estado de la cuenta
         boolean activo = !"Inactivo".equals(cmbEstado.getSelectedItem());
+
+        // ── Guardar foto de perfil si se seleccionó una nueva ─────────────────
+        if (fotoBytes != null && fotoNombreArchivo != null) {
+            com.saia.business.ConfiguracionService configService = 
+                new com.saia.business.ConfiguracionService();
+            String rutaFotoGuardada = configService.guardarFotoPerfil(
+                numDocActual, fotoNombreArchivo, fotoBytes, fotoRutaActual);
+            
+            if (rutaFotoGuardada == null) {
+                showError("Error al guardar la foto de perfil. Verifique el formato y tamaño.");
+                return;
+            }
+            
+            persona.setFotoPerfil(rutaFotoGuardada);
+        } else if (fotoRutaActual != null) {
+            // Mantener la foto actual si no se cambió
+            persona.setFotoPerfil(fotoRutaActual);
+        }
 
         JButton btnGuardar = (JButton)((JPanel) getComponent(2)).getComponent(0);
         btnGuardar.setEnabled(false);

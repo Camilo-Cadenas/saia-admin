@@ -22,24 +22,21 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
 
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.SpinnerDateModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DocumentFilter;
 
 import com.saia.model.Persona;
 import com.saia.model.PersonalSeguridad;
@@ -70,6 +67,14 @@ abstract class BaseFormPanel extends JPanel {
     protected LocalDate         fechaSeleccionada;
     protected JComboBox<String> cmbTipSang;
     protected JComboBox<String> cmbGenero;
+    
+    // Componentes de foto de perfil
+    protected JLabel            lblFotoPreview;
+    protected JButton           btnSeleccionarFoto;
+    protected JButton           btnEliminarFoto;
+    protected byte[]            fotoBytes;
+    protected String            fotoNombreArchivo;
+    protected String            fotoRutaActual;  // Para edición
 
     // Opciones estáticas
     static final String[] TIPOS_SANGRE = {
@@ -112,16 +117,26 @@ abstract class BaseFormPanel extends JPanel {
         styleCombo(cmbTipDoc);
         addRow(form, gc, "Tipo de Documento: *", cmbTipDoc, 0);
 
-        txtNumDoc = field("Ej: 1151940954");
-        if (numDocEditable) applyNumericFilter(txtNumDoc);
-        else { txtNumDoc.setEditable(false); txtNumDoc.setBackground(new Color(0xF5F5F5)); }
+        txtNumDoc = field("0123456789");
+        if (numDocEditable) {
+            applyNumericFilter(txtNumDoc, InputValidator.MAX_NUM_DOC);
+        } else { 
+            txtNumDoc.setEditable(false); 
+            txtNumDoc.setBackground(new Color(0xF5F5F5)); 
+        }
         addRow(form, gc, "N° Documento: *", txtNumDoc, 1);
 
-        txtNombres   = field("Ej: Carlos Andrés");
-        txtApellidos = field("Ej: López Martínez");
+        txtNombres   = field("Personal Seguridad");
+        applyAlphanumericFilter(txtNombres, InputValidator.MAX_NOMBRES);
+        
+        txtApellidos = field("Personal Seguridad");
+        applyAlphanumericFilter(txtApellidos, InputValidator.MAX_APELLIDOS);
+        
         txtEmail     = field("ejemplo@correo.com");
-        txtTelefono  = field("Ej: 3001234567");
-        applyNumericFilter(txtTelefono);
+        applyEmailFilter(txtEmail);
+        
+        txtTelefono  = field("3001234567");
+        applyNumericFilter(txtTelefono, InputValidator.MAX_TELEFONO);
 
         addRow(form, gc, "Nombres: *",           txtNombres,   2);
         addRow(form, gc, "Apellidos: *",          txtApellidos, 3);
@@ -142,6 +157,515 @@ abstract class BaseFormPanel extends JPanel {
         card.add(form, BorderLayout.CENTER);
         return card;
     }
+    
+    // ── Componente de Foto de Perfil ──────────────────────────────────────────
+    
+    /**
+     * Construye el panel para seleccionar/previsualizar foto de perfil.
+     * 
+     * @return Panel con preview de foto y botones de acción
+     */
+    private JPanel buildFotoPerfilRow() {
+        JPanel panel = new JPanel(new BorderLayout(8, 0));
+        panel.setOpaque(false);
+        
+        // Preview de la foto (circular)
+        lblFotoPreview = new JLabel() {
+            private java.awt.Image fotoImage = null;
+            
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                super.paintComponent(g);
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, 
+                                   java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING,
+                                   java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                
+                if (fotoImage != null) {
+                    // Dibujar foto circular
+                    g2.setClip(new java.awt.geom.Ellipse2D.Float(0, 0, 80, 80));
+                    g2.drawImage(fotoImage, 0, 0, 80, 80, null);
+                    g2.setClip(null);
+                    
+                    // Borde
+                    g2.setColor(NAVY);
+                    g2.setStroke(new java.awt.BasicStroke(2f));
+                    g2.draw(new java.awt.geom.Ellipse2D.Float(1, 1, 78, 78));
+                } else {
+                    // Fondo circular suave
+                    g2.setColor(new Color(0xE8EAF6));
+                    g2.fill(new java.awt.geom.Ellipse2D.Float(0, 0, 80, 80));
+                    
+                    // Borde del círculo
+                    g2.setColor(new Color(0xC5CAE9));
+                    g2.setStroke(new java.awt.BasicStroke(2f));
+                    g2.draw(new java.awt.geom.Ellipse2D.Float(1, 1, 78, 78));
+                    
+                    // Ícono de cámara
+                    g2.setColor(new Color(0x9FA8DA));
+                    
+                    // Cuerpo de la cámara (rectángulo redondeado)
+                    int camWidth = 36;
+                    int camHeight = 28;
+                    int camX = 40 - camWidth / 2;
+                    int camY = 32;
+                    g2.fill(new java.awt.geom.RoundRectangle2D.Float(
+                        camX, camY, camWidth, camHeight, 6, 6));
+                    
+                    // Visor/flash superior (rectángulo pequeño)
+                    int visorWidth = 12;
+                    int visorHeight = 6;
+                    int visorX = camX + 4;
+                    int visorY = camY - 8;
+                    g2.fill(new java.awt.geom.RoundRectangle2D.Float(
+                        visorX, visorY, visorWidth, visorHeight, 3, 3));
+                    
+                    // Lente (círculo en el centro)
+                    g2.setColor(new Color(0x7986CB)); // Azul más oscuro para el lente
+                    int lensSize = 16;
+                    int lensX = 40 - lensSize / 2;
+                    int lensY = camY + (camHeight - lensSize) / 2;
+                    g2.fillOval(lensX, lensY, lensSize, lensSize);
+                    
+                    // Reflejo en el lente (círculo pequeño blanco)
+                    g2.setColor(new Color(255, 255, 255, 160));
+                    int reflectSize = 6;
+                    g2.fillOval(lensX + 3, lensY + 3, reflectSize, reflectSize);
+                }
+                
+                g2.dispose();
+            }
+            
+            @SuppressWarnings("unused") // Usado mediante reflexión en seleccionarFoto() y cargarFotoExistente()
+            public void setFotoImage(java.awt.Image img) {
+                this.fotoImage = img;
+                repaint();
+            }
+        };
+        lblFotoPreview.setPreferredSize(new Dimension(80, 80));
+        lblFotoPreview.setOpaque(false);
+        
+        // Botones
+        JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        botonesPanel.setOpaque(false);
+        
+        // Botón Seleccionar (Verde)
+        btnSeleccionarFoto = new JButton("Seleccionar foto") {
+            boolean hov = false;
+            { 
+                addMouseListener(new MouseAdapter() {
+                    @Override public void mouseEntered(MouseEvent e) { hov=true; repaint(); }
+                    @Override public void mouseExited (MouseEvent e) { hov=false;repaint(); }
+                }); 
+            }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color baseColor = new Color(0x4CAF50); // Verde Material
+                g2.setColor(hov ? baseColor.darker() : baseColor);
+                g2.fill(new java.awt.geom.RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
+                g2.dispose(); 
+                super.paintComponent(g);
+            }
+        };
+        btnSeleccionarFoto.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btnSeleccionarFoto.setForeground(Color.WHITE);
+        btnSeleccionarFoto.setOpaque(false);
+        btnSeleccionarFoto.setContentAreaFilled(false);
+        btnSeleccionarFoto.setBorderPainted(false);
+        btnSeleccionarFoto.setFocusPainted(false);
+        btnSeleccionarFoto.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnSeleccionarFoto.setPreferredSize(new Dimension(130, 32));
+        btnSeleccionarFoto.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.UPLOAD, 12, Color.WHITE));
+        btnSeleccionarFoto.addActionListener(e -> seleccionarFoto());
+        
+        // Botón Eliminar (Rojo)
+        btnEliminarFoto = new JButton("Eliminar") {
+            boolean hov = false;
+            { 
+                addMouseListener(new MouseAdapter() {
+                    @Override public void mouseEntered(MouseEvent e) { 
+                        if (isEnabled()) {
+                            hov = true;
+                            repaint(); 
+                        }
+                    }
+                    @Override public void mouseExited (MouseEvent e) { 
+                        hov = false;
+                        repaint(); 
+                    }
+                }); 
+            }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                Color baseColor = new Color(0xE53935); // Rojo Material
+                
+                // Si está deshabilitado, usar color más claro
+                if (!isEnabled()) {
+                    baseColor = new Color(0xEF9A9A); // Rojo claro para deshabilitado
+                } else if (hov) {
+                    baseColor = baseColor.darker();
+                }
+                
+                g2.setColor(baseColor);
+                g2.fill(new java.awt.geom.RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
+                g2.dispose(); 
+                super.paintComponent(g);
+            }
+            
+            @Override
+            public void setEnabled(boolean enabled) {
+                super.setEnabled(enabled);
+                // FORZAR color blanco siempre, incluso cuando está deshabilitado
+                setForeground(Color.WHITE);
+            }
+        };
+        btnEliminarFoto.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btnEliminarFoto.setForeground(Color.WHITE); // Color inicial blanco
+        btnEliminarFoto.setOpaque(false);
+        btnEliminarFoto.setContentAreaFilled(false);
+        btnEliminarFoto.setBorderPainted(false);
+        btnEliminarFoto.setFocusPainted(false);
+        btnEliminarFoto.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnEliminarFoto.setPreferredSize(new Dimension(90, 32));
+        btnEliminarFoto.setIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TRASH_ALT, 11, Color.WHITE));
+        btnEliminarFoto.setEnabled(false);
+        
+        // Después de deshabilitar, volver a forzar el color blanco
+        btnEliminarFoto.setForeground(Color.WHITE);
+        btnEliminarFoto.setDisabledIcon(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.TRASH_ALT, 11, Color.WHITE));
+        
+        btnEliminarFoto.addActionListener(e -> eliminarFoto());
+        
+        botonesPanel.add(btnSeleccionarFoto);
+        botonesPanel.add(btnEliminarFoto);
+        
+        // Info de restricciones
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+        infoPanel.add(botonesPanel);
+        
+        JLabel lblInfo = new JLabel("<html><span style='font-size:9px; color:#888;'>" +
+                                    "JPG, PNG o WEBP (máx. 2 MB)</span></html>");
+        lblInfo.setBorder(new EmptyBorder(4, 0, 0, 0));
+        infoPanel.add(lblInfo);
+        
+        panel.add(lblFotoPreview, BorderLayout.WEST);
+        panel.add(infoPanel, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    /**
+     * Abre un diálogo para seleccionar una imagen de perfil.
+     */
+    protected void seleccionarFoto() {
+        javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
+        chooser.setDialogTitle("Seleccionar foto de perfil");
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+            "Imágenes (JPG, PNG, WEBP)", "jpg", "jpeg", "png", "webp"));
+        
+        // ── CONFIGURAR VISTA PREVIA DE IMÁGENES ──
+        chooser.setAccessory(createImagePreviewPanel(chooser));
+        chooser.setFileView(new javax.swing.filechooser.FileView() {
+            @Override
+            public javax.swing.Icon getIcon(java.io.File f) {
+                if (f.isFile()) {
+                    String name = f.getName().toLowerCase();
+                    if (name.endsWith(".jpg") || name.endsWith(".jpeg") || 
+                        name.endsWith(".png") || name.endsWith(".webp")) {
+                        // Cargar miniatura del archivo
+                        try {
+                            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
+                            if (img != null) {
+                                java.awt.Image scaled = img.getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH);
+                                return new javax.swing.ImageIcon(scaled);
+                            }
+                        } catch (java.io.IOException e) {
+                            // Si falla la lectura del archivo, usar ícono por defecto
+                        }
+                    }
+                }
+                return super.getIcon(f);
+            }
+        });
+        
+        if (chooser.showOpenDialog(this) == javax.swing.JFileChooser.APPROVE_OPTION) {
+            java.io.File file = chooser.getSelectedFile();
+            
+            // Validar tamaño (máx 2 MB)
+            if (file.length() > 2 * 1024 * 1024) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "La imagen no puede superar los 2 MB.",
+                    "Archivo muy grande", javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            try {
+                // Leer bytes del archivo
+                fotoBytes = java.nio.file.Files.readAllBytes(file.toPath());
+                fotoNombreArchivo = file.getName();
+                
+                // Cargar preview
+                java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
+                if (img != null) {
+                    java.awt.Image scaled = img.getScaledInstance(80, 80, java.awt.Image.SCALE_SMOOTH);
+                    try {
+                        lblFotoPreview.getClass()
+                            .getMethod("setFotoImage", java.awt.Image.class)
+                            .invoke(lblFotoPreview, scaled);
+                    } catch (ReflectiveOperationException ex) {
+                        System.err.println("Error setting preview: " + ex.getMessage());
+                    }
+                    btnEliminarFoto.setEnabled(true);
+                    // Forzar color blanco después de habilitar
+                    btnEliminarFoto.setForeground(Color.WHITE);
+                }
+            } catch (java.io.IOException ex) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Error al cargar la imagen: " + ex.getMessage(),
+                    "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    /**
+     * Crea un panel de vista previa de imágenes para el JFileChooser.
+     * Muestra una miniatura grande de la imagen seleccionada.
+     * 
+     * @param chooser El JFileChooser al que se asociará el panel
+     * @return Panel de vista previa
+     */
+    private JPanel createImagePreviewPanel(javax.swing.JFileChooser chooser) {
+        JPanel previewPanel = new JPanel(new BorderLayout(10, 10));
+        previewPanel.setPreferredSize(new Dimension(250, 350));
+        previewPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        previewPanel.setBackground(Color.WHITE);
+        
+        // Título
+        JLabel lblTitulo = new JLabel("Vista Previa", SwingConstants.CENTER);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblTitulo.setForeground(TEXT_DARK);
+        lblTitulo.setBorder(new EmptyBorder(0, 0, 10, 0));
+        
+        // Panel para la imagen
+        JPanel imageContainer = new JPanel(new BorderLayout());
+        imageContainer.setBackground(new Color(0xF5F5F5));
+        imageContainer.setBorder(new LineBorder(new Color(0xD0D0D0), 1, true));
+        imageContainer.setPreferredSize(new Dimension(230, 230));
+        
+        JLabel lblPreview = new JLabel("", SwingConstants.CENTER);
+        lblPreview.setVerticalAlignment(SwingConstants.CENTER);
+        lblPreview.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblPreview.setForeground(new Color(0x888888));
+        imageContainer.add(lblPreview, BorderLayout.CENTER);
+        
+        // Panel de información
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false);
+        infoPanel.setBorder(new EmptyBorder(10, 5, 0, 5));
+        
+        JLabel lblNombre = new JLabel(" ");
+        lblNombre.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        lblNombre.setForeground(TEXT_DARK);
+        lblNombre.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JLabel lblDimensiones = new JLabel(" ");
+        lblDimensiones.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lblDimensiones.setForeground(new Color(0x666666));
+        lblDimensiones.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JLabel lblTamano = new JLabel(" ");
+        lblTamano.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        lblTamano.setForeground(new Color(0x666666));
+        lblTamano.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        infoPanel.add(lblNombre);
+        infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(lblDimensiones);
+        infoPanel.add(Box.createVerticalStrut(3));
+        infoPanel.add(lblTamano);
+        
+        previewPanel.add(lblTitulo, BorderLayout.NORTH);
+        previewPanel.add(imageContainer, BorderLayout.CENTER);
+        previewPanel.add(infoPanel, BorderLayout.SOUTH);
+        
+        // Listener para actualizar la vista previa cuando cambia la selección
+        chooser.addPropertyChangeListener(evt -> {
+            if (javax.swing.JFileChooser.SELECTED_FILE_CHANGED_PROPERTY.equals(evt.getPropertyName())) {
+                java.io.File file = (java.io.File) evt.getNewValue();
+                
+                if (file == null || !file.isFile()) {
+                    lblPreview.setIcon(null);
+                    lblPreview.setText("No hay imagen seleccionada");
+                    lblNombre.setText(" ");
+                    lblDimensiones.setText(" ");
+                    lblTamano.setText(" ");
+                    return;
+                }
+                
+                String name = file.getName().toLowerCase();
+                if (name.endsWith(".jpg") || name.endsWith(".jpeg") || 
+                    name.endsWith(".png") || name.endsWith(".webp")) {
+                    
+                    // Cargar imagen en hilo separado para no bloquear la UI
+                    new javax.swing.SwingWorker<java.awt.Image, Void>() {
+                        private String nombreArchivo;
+                        private String dimensiones;
+                        private String tamano;
+                        
+                        @Override
+                        protected java.awt.Image doInBackground() throws Exception {
+                            try {
+                                java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
+                                if (img != null) {
+                                    nombreArchivo = file.getName();
+                                    dimensiones = img.getWidth() + " × " + img.getHeight() + " px";
+                                    
+                                    long bytes = file.length();
+                                    if (bytes < 1024) {
+                                        tamano = bytes + " bytes";
+                                    } else if (bytes < 1024 * 1024) {
+                                        tamano = String.format("%.1f KB", bytes / 1024.0);
+                                    } else {
+                                        tamano = String.format("%.2f MB", bytes / (1024.0 * 1024.0));
+                                    }
+                                    
+                                    // Escalar manteniendo proporción
+                                    int maxWidth = 220;
+                                    int maxHeight = 220;
+                                    double scale = Math.min(
+                                        (double) maxWidth / img.getWidth(),
+                                        (double) maxHeight / img.getHeight()
+                                    );
+                                    int newWidth = (int) (img.getWidth() * scale);
+                                    int newHeight = (int) (img.getHeight() * scale);
+                                    
+                                    return img.getScaledInstance(newWidth, newHeight, java.awt.Image.SCALE_SMOOTH);
+                                }
+                            } catch (java.io.IOException e) {
+                                System.err.println("Error cargando preview: " + e.getMessage());
+                            }
+                            return null;
+                        }
+                        
+                        @Override
+                        protected void done() {
+                            try {
+                                java.awt.Image previewImg = get();
+                                if (previewImg != null) {
+                                    lblPreview.setIcon(new javax.swing.ImageIcon(previewImg));
+                                    lblPreview.setText("");
+                                    lblNombre.setText("📄 " + nombreArchivo);
+                                    lblDimensiones.setText("📐 " + dimensiones);
+                                    lblTamano.setText("💾 " + tamano);
+                                } else {
+                                    lblPreview.setIcon(null);
+                                    lblPreview.setText("Error al cargar imagen");
+                                    lblNombre.setText(" ");
+                                    lblDimensiones.setText(" ");
+                                    lblTamano.setText(" ");
+                                }
+                            } catch (java.util.concurrent.ExecutionException | InterruptedException e) {
+                                lblPreview.setIcon(null);
+                                lblPreview.setText("Error al cargar imagen");
+                            }
+                        }
+                    }.execute();
+                    
+                } else {
+                    lblPreview.setIcon(null);
+                    lblPreview.setText("No es una imagen válida");
+                    lblNombre.setText(file.getName());
+                    lblDimensiones.setText(" ");
+                    lblTamano.setText(" ");
+                }
+            }
+        });
+        
+        return previewPanel;
+    }
+    
+    /**
+     * Elimina la foto de perfil seleccionada.
+     */
+    protected void eliminarFoto() {
+        fotoBytes = null;
+        fotoNombreArchivo = null;
+        
+        // Limpiar preview
+        try {
+            lblFotoPreview.getClass()
+                .getMethod("setFotoImage", java.awt.Image.class)
+                .invoke(lblFotoPreview, (java.awt.Image) null);
+        } catch (ReflectiveOperationException ex) {
+            System.err.println("Error clearing preview: " + ex.getMessage());
+        }
+        
+        btnEliminarFoto.setEnabled(false);
+        // Forzar color blanco después de deshabilitar
+        btnEliminarFoto.setForeground(Color.WHITE);
+    }
+    
+    /**
+     * Carga una foto existente desde la base de datos para el modo edición.
+     * 
+     * @param rutaFoto Ruta de la foto en disco
+     */
+    protected void cargarFotoExistente(String rutaFoto) {
+        if (rutaFoto == null || rutaFoto.isBlank()) {
+            eliminarFoto();
+            return;
+        }
+        
+        fotoRutaActual = rutaFoto;
+        
+        // Cargar preview de forma asíncrona
+        new javax.swing.SwingWorker<java.awt.Image, Void>() {
+            @Override
+            protected java.awt.Image doInBackground() {
+                try {
+                    java.io.File f = new java.io.File(rutaFoto);
+                    if (!f.exists()) return null;
+                    
+                    java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
+                    if (img == null) return null;
+                    
+                    return img.getScaledInstance(80, 80, java.awt.Image.SCALE_SMOOTH);
+                } catch (java.io.IOException e) {
+                    System.err.println("Error cargando foto existente: " + e.getMessage());
+                    return null;
+                }
+            }
+            
+            @Override
+            protected void done() {
+                try {
+                    java.awt.Image img = get();
+                    if (img != null) {
+                        lblFotoPreview.getClass()
+                            .getMethod("setFotoImage", java.awt.Image.class)
+                            .invoke(lblFotoPreview, img);
+                        btnEliminarFoto.setEnabled(true);
+                        // Forzar color blanco después de habilitar
+                        btnEliminarFoto.setForeground(Color.WHITE);
+                    }
+                } catch (java.util.concurrent.ExecutionException | InterruptedException ex) {
+                    System.err.println("Error obteniendo imagen: " + ex.getMessage());
+                } catch (ReflectiveOperationException ex) {
+                    System.err.println("Error mostrando foto: " + ex.getMessage());
+                }
+            }
+        }.execute();
+    }
 
     // ── Tarjeta Datos del Guardia ─────────────────────────────────────────────
     protected JPanel buildGuardaCard() {
@@ -157,7 +681,9 @@ abstract class BaseFormPanel extends JPanel {
         form.setBorder(new EmptyBorder(14, 18, 14, 18));
         GridBagConstraints gc = defaultGbc();
 
-        txtEmpresa = field("Ej: Seguridad Total S.A.S");
+        txtEmpresa = field("Empresa Seguridad");
+        applyAlphanumericFilter(txtEmpresa, InputValidator.MAX_EMPRESA);
+        
         cmbTurno   = new JComboBox<>(new String[]{
             "-- Seleccione turno --","Mañana","Tarde","Noche","Rotativo"
         });
@@ -168,9 +694,12 @@ abstract class BaseFormPanel extends JPanel {
         addRow(form, gc, "Empresa de Seguridad:", txtEmpresa, 0);
         addRow(form, gc, "Turno:",                cmbTurno,   1);
         addRow(form, gc, "Estado:",               cmbEstado,  2);
+        
+        // Foto de perfil
+        addRow(form, gc, "Foto de Perfil:",       buildFotoPerfilRow(), 3);
 
         GridBagConstraints fill = (GridBagConstraints) gc.clone();
-        fill.gridy = 3; fill.weighty = 1.0; fill.gridwidth = 2;
+        fill.gridy = 4; fill.weighty = 1.0; fill.gridwidth = 2;
         form.add(Box.createGlue(), fill);
 
         card.add(form, BorderLayout.CENTER);
@@ -215,55 +744,288 @@ abstract class BaseFormPanel extends JPanel {
     protected void showCalendarPopup(Component owner) {
         JDialog dlg = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
                 "Seleccionar fecha", true);
-        dlg.setLayout(new BorderLayout(8, 8));
-        dlg.getRootPane().setBorder(new EmptyBorder(14, 18, 14, 18));
+        dlg.setLayout(new BorderLayout(15, 15));
+        dlg.getRootPane().setBorder(new EmptyBorder(25, 30, 25, 30));
         dlg.setResizable(false);
+        dlg.getContentPane().setBackground(Color.WHITE);
 
-        SpinnerDateModel model = new SpinnerDateModel();
-        if (fechaSeleccionada != null) {
-            Calendar cal = Calendar.getInstance();
-            cal.set(fechaSeleccionada.getYear(), fechaSeleccionada.getMonthValue()-1,
-                    fechaSeleccionada.getDayOfMonth());
-            model.setValue(cal.getTime());
-        }
-        JSpinner spinner = new JSpinner(model);
-        spinner.setEditor(new JSpinner.DateEditor(spinner, "dd/MM/yyyy"));
-        spinner.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        spinner.setPreferredSize(new Dimension(160, 34));
-
-        JLabel lbl = new JLabel("Fecha de nacimiento:");
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-
-        JButton ok     = new JButton("Aceptar");
-        JButton cancel = new JButton("Cancelar");
-        ok.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        ok.setBackground(NAVY); ok.setForeground(Color.BLACK);
-        ok.setFocusPainted(false);
-        cancel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        cancel.setForeground(Color.BLACK);
-        cancel.setFocusPainted(false);
-
-        ok.addActionListener(ev -> {
-            java.util.Date d = (java.util.Date) spinner.getValue();
-            Calendar cal = Calendar.getInstance(); cal.setTime(d);
-            fechaSeleccionada = LocalDate.of(cal.get(Calendar.YEAR),
-                    cal.get(Calendar.MONTH)+1, cal.get(Calendar.DAY_OF_MONTH));
-            txtFechaNac.setText(fechaSeleccionada.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            txtFechaNac.setForeground(new Color(0x333333));
+        // Panel del selector de fecha con dropdowns
+        JPanel selectorPanel = buildDateSelectorPanel();
+        
+        // Botones
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setOpaque(false);
+        
+        JButton btnAceptar = new JButton("Aceptar") {
+            boolean hov = false;
+            { 
+                addMouseListener(new MouseAdapter() {
+                    @Override public void mouseEntered(MouseEvent e) { hov=true; repaint(); }
+                    @Override public void mouseExited (MouseEvent e) { hov=false;repaint(); }
+                }); 
+            }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(hov ? NAVY.darker() : NAVY);
+                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
+                g2.dispose(); 
+                super.paintComponent(g);
+            }
+        };
+        btnAceptar.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnAceptar.setForeground(Color.WHITE);
+        btnAceptar.setOpaque(false);
+        btnAceptar.setContentAreaFilled(false);
+        btnAceptar.setBorderPainted(false);
+        btnAceptar.setFocusPainted(false);
+        btnAceptar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnAceptar.setPreferredSize(new Dimension(110, 36));
+        
+        JButton btnCancelar = new JButton("Cancelar") {
+            boolean hov = false;
+            { 
+                addMouseListener(new MouseAdapter() {
+                    @Override public void mouseEntered(MouseEvent e) { hov=true; repaint(); }
+                    @Override public void mouseExited (MouseEvent e) { hov=false;repaint(); }
+                }); 
+            }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color btnColor = new Color(0xE0E0E0);
+                g2.setColor(hov ? btnColor.darker() : btnColor);
+                g2.fill(new RoundRectangle2D.Float(0,0,getWidth()-1,getHeight()-1,8,8));
+                g2.dispose(); 
+                super.paintComponent(g);
+            }
+        };
+        btnCancelar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnCancelar.setForeground(new Color(0x333333));
+        btnCancelar.setOpaque(false);
+        btnCancelar.setContentAreaFilled(false);
+        btnCancelar.setBorderPainted(false);
+        btnCancelar.setFocusPainted(false);
+        btnCancelar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnCancelar.setPreferredSize(new Dimension(110, 36));
+        
+        btnAceptar.addActionListener(ev -> {
+            if (selectedCalendarDate != null) {
+                fechaSeleccionada = selectedCalendarDate;
+                txtFechaNac.setText(fechaSeleccionada.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                txtFechaNac.setForeground(new Color(0x333333));
+            }
             dlg.dispose();
         });
-        cancel.addActionListener(ev -> dlg.dispose());
-
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        top.setOpaque(false); top.add(lbl); top.add(spinner);
-        JPanel bot = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        bot.setOpaque(false); bot.add(cancel); bot.add(ok);
-
-        dlg.add(top, BorderLayout.CENTER);
-        dlg.add(bot, BorderLayout.SOUTH);
-        dlg.pack(); dlg.setLocationRelativeTo(owner); dlg.setVisible(true);
+        
+        btnCancelar.addActionListener(ev -> dlg.dispose());
+        
+        buttonPanel.add(btnCancelar);
+        buttonPanel.add(btnAceptar);
+        
+        dlg.add(selectorPanel, BorderLayout.CENTER);
+        dlg.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dlg.pack();
+        dlg.setLocationRelativeTo(owner);
+        dlg.setVisible(true);
     }
-
+    
+    // Variable para almacenar la fecha seleccionada en el calendario
+    private LocalDate selectedCalendarDate;
+    
+    /**
+     * Construye el panel del selector de fecha con dropdowns para día, mes y año.
+     * Diseño moderno y fácil de usar.
+     */
+    private JPanel buildDateSelectorPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 20));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(new EmptyBorder(0, 0, 0, 0));
+        
+        // Título con ícono
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        headerPanel.setBackground(Color.WHITE);
+        headerPanel.setBorder(new EmptyBorder(0, 0, 15, 0));
+        
+        JLabel iconLabel = new JLabel(com.saia.presentation.IconUtil.icon(
+            org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.CALENDAR_ALT, 20, NAVY));
+        JLabel titleLabel = new JLabel("Seleccione su fecha de nacimiento");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        titleLabel.setForeground(TEXT_DARK);
+        
+        headerPanel.add(iconLabel);
+        headerPanel.add(titleLabel);
+        
+        // Panel de selectores
+        JPanel selectorsPanel = new JPanel(new GridBagLayout());
+        selectorsPanel.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        // Inicializar con fecha actual o fecha seleccionada
+        LocalDate initialDate = fechaSeleccionada != null ? fechaSeleccionada : LocalDate.now();
+        selectedCalendarDate = initialDate;
+        
+        // ── Selector de DÍA ──
+        JLabel lblDia = new JLabel("Día:");
+        lblDia.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblDia.setForeground(TEXT_DARK);
+        
+        Integer[] dias = new Integer[31];
+        for (int i = 0; i < 31; i++) dias[i] = i + 1;
+        JComboBox<Integer> cmbDia = new JComboBox<>(dias);
+        cmbDia.setSelectedItem(initialDate.getDayOfMonth());
+        cmbDia.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cmbDia.setPreferredSize(new Dimension(100, 40));
+        styleModernCombo(cmbDia);
+        
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.0;
+        selectorsPanel.add(lblDia, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
+        selectorsPanel.add(cmbDia, gbc);
+        
+        // ── Selector de MES ──
+        JLabel lblMes = new JLabel("Mes:");
+        lblMes.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblMes.setForeground(TEXT_DARK);
+        
+        String[] meses = {
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        };
+        JComboBox<String> cmbMes = new JComboBox<>(meses);
+        cmbMes.setSelectedIndex(initialDate.getMonthValue() - 1);
+        cmbMes.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cmbMes.setPreferredSize(new Dimension(150, 40));
+        styleModernCombo(cmbMes);
+        
+        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 0.0;
+        selectorsPanel.add(lblMes, gbc);
+        gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 0.4;
+        selectorsPanel.add(cmbMes, gbc);
+        
+        // ── Selector de AÑO ──
+        JLabel lblAnio = new JLabel("Año:");
+        lblAnio.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblAnio.setForeground(TEXT_DARK);
+        
+        int currentYear = LocalDate.now().getYear();
+        Integer[] anios = new Integer[120]; // Últimos 120 años
+        for (int i = 0; i < 120; i++) anios[i] = currentYear - i;
+        JComboBox<Integer> cmbAnio = new JComboBox<>(anios);
+        cmbAnio.setSelectedItem(initialDate.getYear());
+        cmbAnio.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cmbAnio.setPreferredSize(new Dimension(110, 40));
+        styleModernCombo(cmbAnio);
+        
+        gbc.gridx = 2; gbc.gridy = 0; gbc.weightx = 0.0;
+        selectorsPanel.add(lblAnio, gbc);
+        gbc.gridx = 2; gbc.gridy = 1; gbc.weightx = 0.3;
+        selectorsPanel.add(cmbAnio, gbc);
+        
+        // Vista previa de la fecha seleccionada
+        JPanel previewPanel = new JPanel(new BorderLayout());
+        previewPanel.setBackground(new Color(0xF5F7FA));
+        previewPanel.setBorder(new LineBorder(new Color(0xD1D9E6), 1, true));
+        previewPanel.setPreferredSize(new Dimension(0, 60));
+        
+        JLabel lblPreviewTitle = new JLabel("Fecha seleccionada:");
+        lblPreviewTitle.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblPreviewTitle.setForeground(new Color(0x666666));
+        lblPreviewTitle.setBorder(new EmptyBorder(8, 15, 2, 15));
+        
+        JLabel lblPreviewDate = new JLabel(initialDate.format(
+            DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", 
+            java.util.Locale.forLanguageTag("es-ES"))));
+        lblPreviewDate.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblPreviewDate.setForeground(NAVY);
+        lblPreviewDate.setBorder(new EmptyBorder(2, 15, 8, 15));
+        
+        JPanel previewContent = new JPanel(new BorderLayout());
+        previewContent.setOpaque(false);
+        previewContent.add(lblPreviewTitle, BorderLayout.NORTH);
+        previewContent.add(lblPreviewDate, BorderLayout.CENTER);
+        
+        previewPanel.add(previewContent, BorderLayout.CENTER);
+        
+        // Listener para actualizar la fecha cuando cambian los selectores
+        java.awt.event.ActionListener updateDateListener = e -> {
+            try {
+                int dia = (Integer) cmbDia.getSelectedItem();
+                int mes = cmbMes.getSelectedIndex() + 1;
+                int anio = (Integer) cmbAnio.getSelectedItem();
+                
+                // Validar que la fecha sea válida
+                if (dia > 28) {
+                    // Verificar días válidos para el mes seleccionado
+                    int maxDias = LocalDate.of(anio, mes, 1).lengthOfMonth();
+                    if (dia > maxDias) {
+                        dia = maxDias;
+                        cmbDia.setSelectedItem(dia);
+                    }
+                }
+                
+                LocalDate newDate = LocalDate.of(anio, mes, dia);
+                selectedCalendarDate = newDate;
+                
+                // Actualizar vista previa
+                lblPreviewDate.setText(newDate.format(
+                    DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", 
+                    java.util.Locale.forLanguageTag("es-ES"))));
+                
+            } catch (Exception ex) {
+                // Si hay error, mantener fecha actual
+                System.err.println("Error actualizando fecha: " + ex.getMessage());
+            }
+        };
+        
+        cmbDia.addActionListener(updateDateListener);
+        cmbMes.addActionListener(updateDateListener);
+        cmbAnio.addActionListener(updateDateListener);
+        
+        // Ensamblar panel
+        panel.add(headerPanel, BorderLayout.NORTH);
+        panel.add(selectorsPanel, BorderLayout.CENTER);
+        panel.add(previewPanel, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    /**
+     * Aplica un estilo moderno a los JComboBox del selector de fecha.
+     */
+    private void styleModernCombo(JComboBox<?> combo) {
+        combo.setBackground(Color.WHITE);
+        combo.setForeground(new Color(0x333333));
+        combo.setBorder(new LineBorder(new Color(0xD1D9E6), 2, true));
+        combo.setFocusable(true);
+        combo.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        // Renderizador personalizado para centrar el texto
+        combo.setRenderer(new javax.swing.DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(javax.swing.JList<?> list, 
+                    Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                    list, value, index, isSelected, cellHasFocus);
+                label.setHorizontalAlignment(SwingConstants.CENTER);
+                label.setBorder(new EmptyBorder(6, 10, 6, 10));
+                
+                if (isSelected) {
+                    label.setBackground(NAVY);
+                    label.setForeground(Color.WHITE);
+                } else {
+                    label.setBackground(Color.WHITE);
+                    label.setForeground(new Color(0x333333));
+                }
+                
+                return label;
+            }
+        });
+    }
+    
     // ── Leer campos ───────────────────────────────────────────────────────────
     protected Persona leerPersona(boolean numDocEditable) {
         Persona p = new Persona();
@@ -304,16 +1066,24 @@ abstract class BaseFormPanel extends JPanel {
         return g;
     }
 
+    /**
+     * Obtiene el valor real del campo de texto, excluyendo el placeholder.
+     * 
+     * @param f Campo de texto
+     * @param ph Texto del placeholder
+     * @return Valor del campo sin el placeholder, trimmed
+     */
     protected String val(JTextField f, String ph) {
         String v = f.getText().trim();
-        return v.equals(ph) ? "" : v;
+        // Si el texto es igual al placeholder o está vacío, retornar cadena vacía
+        return (v.equals(ph) || v.isEmpty()) ? "" : v;
     }
 
     protected void markError(JTextField f) { f.setBorder(new LineBorder(BORDER_ERR, 2, true)); }
     protected void clearError(JTextField f){ f.setBorder(new LineBorder(BORDER_C,   1, true)); }
 
     protected boolean validateEmail(String e) {
-        return e.matches("^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$");
+        return InputValidator.isValidEmail(e);
     }
 
     // ── Helpers UI ────────────────────────────────────────────────────────────
@@ -364,19 +1134,58 @@ abstract class BaseFormPanel extends JPanel {
     protected JTextField field(String ph) {
         JTextField f = new JTextField();
         f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        f.setText(ph); f.setForeground(new Color(0xAAAAAA));
+        f.setText(ph); 
+        f.setForeground(new Color(0xAAAAAA));
         f.setBorder(new LineBorder(BORDER_C, 1, true));
         f.setPreferredSize(new Dimension(0, 34));
+        
+        // Ocultar el caret cuando hay placeholder
+        f.getCaret().setVisible(false);
+        
+        // Variable para rastrear si es placeholder
+        final boolean[] isPlaceholder = {true};
+        
         f.addFocusListener(new FocusAdapter() {
-            @Override public void focusGained(FocusEvent e) {
-                if (f.getText().equals(ph)) { f.setText(""); f.setForeground(new Color(0x333333)); }
+            @Override 
+            public void focusGained(FocusEvent e) {
+                // Si es placeholder, limpiar el campo
+                if (isPlaceholder[0]) {
+                    f.setText(""); 
+                    f.setForeground(new Color(0x333333));
+                    isPlaceholder[0] = false;
+                }
                 f.setBorder(new LineBorder(NAVY_LIGHT, 2, true));
+                f.getCaret().setVisible(true);
             }
-            @Override public void focusLost(FocusEvent e) {
-                if (f.getText().isEmpty()) { f.setText(ph); f.setForeground(new Color(0xAAAAAA)); }
+            
+            @Override 
+            public void focusLost(FocusEvent e) {
+                // Si está vacío, restaurar placeholder
+                String text = f.getText().trim();
+                if (text.isEmpty()) { 
+                    f.setText(ph); 
+                    f.setForeground(new Color(0xAAAAAA));
+                    f.getCaret().setVisible(false);
+                    isPlaceholder[0] = true;
+                } else {
+                    isPlaceholder[0] = false;
+                }
                 f.setBorder(new LineBorder(BORDER_C, 1, true));
             }
         });
+        
+        // Listener de teclado para limpiar placeholder al escribir
+        f.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                if (isPlaceholder[0]) {
+                    f.setText("");
+                    f.setForeground(new Color(0x333333));
+                    isPlaceholder[0] = false;
+                }
+            }
+        });
+        
         return f;
     }
 
@@ -429,15 +1238,197 @@ abstract class BaseFormPanel extends JPanel {
         return gc;
     }
 
-    protected void applyNumericFilter(JTextField f) {
-        ((AbstractDocument) f.getDocument()).setDocumentFilter(new DocumentFilter() {
-            @Override public void insertString(FilterBypass fb, int off, String s, AttributeSet a)
-                    throws BadLocationException {
-                if (s != null && s.matches("\\d+")) super.insertString(fb, off, s, a);
+    /**
+     * Aplica filtro numérico estricto a un campo de texto.
+     * Previene entrada de caracteres no numéricos y limita la longitud.
+     * Compatible con placeholders - el filtro se desactiva cuando el campo contiene el placeholder.
+     * 
+     * @param f Campo de texto
+     * @param maxLength Longitud máxima permitida
+     */
+    protected void applyNumericFilter(JTextField f, int maxLength) {
+        AbstractDocument doc = (AbstractDocument) f.getDocument();
+        
+        // Guardar referencia al placeholder para que el filtro lo reconozca
+        final String placeholder = f.getText();
+        
+        doc.setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                    throws javax.swing.text.BadLocationException {
+                if (string == null) return;
+                
+                // Si el campo tiene el placeholder, permitir cualquier inserción
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                if (currentText.equals(placeholder)) {
+                    super.insertString(fb, offset, string, attr);
+                    return;
+                }
+                
+                // Aplicar filtro numérico normal
+                if (string.matches("\\d+")) {
+                    int currentLength = fb.getDocument().getLength();
+                    int finalLength = currentLength + string.length();
+                    
+                    // Para teléfonos, solo verificar longitud (no MAX_INT)
+                    if (finalLength <= maxLength) {
+                        super.insertString(fb, offset, string, attr);
+                    }
+                }
             }
-            @Override public void replace(FilterBypass fb, int off, int len, String s, AttributeSet a)
-                    throws BadLocationException {
-                if (s != null && s.matches("\\d*")) super.replace(fb, off, len, s, a);
+            
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws javax.swing.text.BadLocationException {
+                if (text == null) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+                
+                // Si el campo tiene el placeholder, permitir cualquier reemplazo
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                if (currentText.equals(placeholder)) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+                
+                // Aplicar filtro numérico normal
+                if (text.matches("\\d*")) {
+                    int currentLength = fb.getDocument().getLength();
+                    int finalLength = currentLength - length + text.length();
+                    
+                    // Para teléfonos, solo verificar longitud (no MAX_INT)
+                    if (finalLength <= maxLength) {
+                        super.replace(fb, offset, length, text, attrs);
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Aplica filtro alfanumérico a un campo de texto.
+     * Previene desbordamiento limitando la longitud según restricciones de BD.
+     * Compatible con placeholders - el filtro se desactiva cuando el campo contiene el placeholder.
+     * 
+     * @param f Campo de texto
+     * @param maxLength Longitud máxima permitida
+     */
+    protected void applyAlphanumericFilter(JTextField f, int maxLength) {
+        AbstractDocument doc = (AbstractDocument) f.getDocument();
+        
+        // Guardar referencia al placeholder para que el filtro lo reconozca
+        final String placeholder = f.getText();
+        
+        doc.setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                    throws javax.swing.text.BadLocationException {
+                if (string == null) return;
+                
+                // Si el campo tiene el placeholder, permitir cualquier inserción (será limpiado por el listener)
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                if (currentText.equals(placeholder)) {
+                    super.insertString(fb, offset, string, attr);
+                    return;
+                }
+                
+                // Aplicar filtro normal
+                if (InputValidator.isValidAlphanumericChars(string)) {
+                    int currentLength = fb.getDocument().getLength();
+                    if (currentLength + string.length() <= maxLength) {
+                        super.insertString(fb, offset, string, attr);
+                    }
+                }
+            }
+            
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws javax.swing.text.BadLocationException {
+                if (text == null) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+                
+                // Si el campo tiene el placeholder, permitir cualquier reemplazo
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                if (currentText.equals(placeholder)) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+                
+                // Aplicar filtro normal
+                if (InputValidator.isValidAlphanumericChars(text)) {
+                    int currentLength = fb.getDocument().getLength();
+                    int finalLength = currentLength - length + text.length();
+                    
+                    if (finalLength <= maxLength) {
+                        super.replace(fb, offset, length, text, attrs);
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Aplica filtro de email a un campo de texto.
+     * Previene caracteres inválidos y limita longitud a 255 caracteres.
+     * Compatible con placeholders - el filtro se desactiva cuando el campo contiene el placeholder.
+     * 
+     * @param f Campo de texto para email
+     */
+    protected void applyEmailFilter(JTextField f) {
+        AbstractDocument doc = (AbstractDocument) f.getDocument();
+        
+        // Guardar referencia al placeholder
+        final String placeholder = f.getText();
+        
+        doc.setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                    throws javax.swing.text.BadLocationException {
+                if (string == null) return;
+                
+                // Si el campo tiene el placeholder, permitir inserción
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                if (currentText.equals(placeholder)) {
+                    super.insertString(fb, offset, string, attr);
+                    return;
+                }
+                
+                // Aplicar filtro normal
+                if (InputValidator.isValidEmailChars(string)) {
+                    int currentLength = fb.getDocument().getLength();
+                    if (currentLength + string.length() <= InputValidator.MAX_EMAIL) {
+                        super.insertString(fb, offset, string, attr);
+                    }
+                }
+            }
+            
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws javax.swing.text.BadLocationException {
+                if (text == null) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+                
+                // Si el campo tiene el placeholder, permitir reemplazo
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                if (currentText.equals(placeholder)) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+                
+                // Aplicar filtro normal
+                if (InputValidator.isValidEmailChars(text)) {
+                    int currentLength = fb.getDocument().getLength();
+                    int finalLength = currentLength - length + text.length();
+                    
+                    if (finalLength <= InputValidator.MAX_EMAIL) {
+                        super.replace(fb, offset, length, text, attrs);
+                    }
+                }
             }
         });
     }

@@ -37,7 +37,7 @@ public final class DatabaseConfig {
 
         String host     = props.getProperty("db.host",     "localhost");
         String port     = props.getProperty("db.port",     "3306");
-        String dbName   = props.getProperty("db.name",     "saia");
+        String dbName   = props.getProperty("db.name",     "sena");
 
         // JDBC URL con parámetros de tiempo, charset y zona horaria
         this.url = String.format(

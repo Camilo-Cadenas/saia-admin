@@ -229,6 +229,30 @@ public class AuditoriaDAO {
         }
         return "—";
     }
+    
+    /**
+     * Obtiene el estado actual de una cuenta (Activo/Inactivo).
+     * @param numDoc número de documento de la persona
+     * @return "Activo" si estado=1, "Inactivo" si estado=0, o "—" si no se encuentra
+     */
+    public String getEstadoCuenta(int numDoc) {
+        if (numDoc <= 0) return "—";
+        
+        String sql = "SELECT estado FROM cuenta WHERE num_doc = ?";
+        try (Connection cn = ConnectionPool.getInstance().getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, numDoc);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int estado = rs.getInt("estado");
+                    return estado == 1 ? "Activo" : "Inactivo";
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[AuditoriaDAO] getEstadoCuenta: " + e.getMessage());
+        }
+        return "—";
+    }
 
     // ── Mapeo ─────────────────────────────────────────────────────────────────
 

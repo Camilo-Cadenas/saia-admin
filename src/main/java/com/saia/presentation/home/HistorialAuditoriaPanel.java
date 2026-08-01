@@ -460,9 +460,10 @@ public class HistorialAuditoriaPanel extends JPanel {
             addInfoField(afectadoCard, "N° de Documento", String.valueOf(r.getNumDocAfectado()));
             addInfoField(afectadoCard, "Nombre", nombreAfectado);
             addInfoField(afectadoCard, "Tipo de usuario", r.getEntidad());
-            addInfoField(afectadoCard, "Estado actual", 
-                r.getAccion() == Accion.BLOQUEAR ? "Cuenta Bloqueada" : 
-                r.getAccion() == Accion.HABILITAR ? "Cuenta Activa" : "—");
+            
+            // Obtener estado actual desde la base de datos
+            String estadoActual = service.getEstadoCuenta(r.getNumDocAfectado());
+            addInfoField(afectadoCard, "Estado actual", estadoActual);
             
             body.add(afectadoCard);
             body.add(vgap(18));

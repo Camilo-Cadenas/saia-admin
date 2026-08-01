@@ -33,7 +33,6 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
-import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 import com.saia.business.ConfiguracionService;
@@ -60,7 +59,7 @@ public class InicioPanel extends JPanel {
     private static final Color TEXT_DARK   = UITheme.TEXT_PRIMARY;
     private static final Color TEXT_GRAY   = UITheme.TEXT_SECONDARY;
     private static final Color TEXT_LIGHT  = UITheme.TEXT_LIGHT;
-
+    
     private final DashboardService service = new DashboardService();
     private final ConfiguracionService configService = new ConfiguracionService();
 
@@ -196,10 +195,6 @@ public class InicioPanel extends JPanel {
         lblFechaHora.setBorder(new EmptyBorder(0, 0, 0, 16));
         lblFechaHora.setHorizontalAlignment(SwingConstants.RIGHT);
         updateFechaHora();
-
-        // Actualizar hora cada minuto
-        Timer t = new Timer(60_000, e -> updateFechaHora());
-        t.start();
 
         p.add(left,       BorderLayout.WEST);
         p.add(lblFechaHora, BorderLayout.EAST);

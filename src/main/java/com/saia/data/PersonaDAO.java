@@ -21,7 +21,7 @@ import com.saia.model.Persona;
 public class PersonaDAO {
 
     private static final String COLS =
-            "num_doc, tip_doc, nombres, p_ape, s_ape, tel, tip_sang, genero, fecha_nac, email";
+            "num_doc, tip_doc, nombres, p_ape, s_ape, tel, tip_sang, genero, fecha_nac, email, foto_perfil";
 
     private static final String SQL_FIND_BY_EMAIL =
             "SELECT " + COLS + " FROM persona WHERE LOWER(email) = LOWER(?)";
@@ -38,13 +38,13 @@ public class PersonaDAO {
     // INSERT completo — incluye todos los campos del formulario de registro
     private static final String SQL_INSERT =
             "INSERT INTO persona (num_doc, tip_doc, nombres, p_ape, s_ape, " +
-            "                     tel, tip_sang, genero, fecha_nac, email) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "                     tel, tip_sang, genero, fecha_nac, email, foto_perfil) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     // Update completo (para edición de perfil)
     private static final String SQL_UPDATE =
             "UPDATE persona SET tip_doc=?, nombres=?, p_ape=?, s_ape=?, tel=?, " +
-            "       tip_sang=?, genero=?, fecha_nac=?, email=? " +
+            "       tip_sang=?, genero=?, fecha_nac=?, email=?, foto_perfil=? " +
             "WHERE num_doc = ?";
 
     // ── Consultas ─────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ public class PersonaDAO {
 
     /**
      * Inserta los campos obligatorios de persona para el registro de personal.
-     * Los datos opcionales (tel, tip_sang, genero, fecha_nac) se actualizan luego.
+     * Los datos opcionales (tel, tip_sang, genero, fecha_nac, foto_perfil) se actualizan luego.
      */
     public void insert(Persona p) {
         try (Connection cn = ConnectionPool.getInstance().getConnection();
@@ -120,6 +120,7 @@ public class PersonaDAO {
             ps.setString(8,  nullIfBlank(p.getGenero()));
             ps.setDate  (9,  p.getFechaNac() != null ? Date.valueOf(p.getFechaNac()) : null);
             ps.setString(10, p.getEmail() != null ? p.getEmail().trim().toLowerCase() : null);
+            ps.setString(11, nullIfBlank(p.getFotoPerfil()));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Error insertando persona numDoc=" + p.getNumDoc(), e);
@@ -141,7 +142,8 @@ public class PersonaDAO {
             ps.setString(7, nullIfBlank(p.getGenero()));
             ps.setDate  (8, p.getFechaNac() != null ? Date.valueOf(p.getFechaNac()) : null);
             ps.setString(9, p.getEmail() != null ? p.getEmail().trim().toLowerCase() : null);
-            ps.setInt   (10, p.getNumDoc());
+            ps.setString(10, nullIfBlank(p.getFotoPerfil()));
+            ps.setInt   (11, p.getNumDoc());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Error actualizando persona numDoc=" + p.getNumDoc(), e);
@@ -163,6 +165,7 @@ public class PersonaDAO {
         Date fn = rs.getDate("fecha_nac");
         if (fn != null) p.setFechaNac(fn.toLocalDate());
         p.setEmail  (rs.getString("email"));
+        p.setFotoPerfil(rs.getString("foto_perfil"));
         return p;
     }
 

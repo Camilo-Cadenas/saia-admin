@@ -66,4 +66,13 @@ public class AuditoriaService {
     public String getNombrePersona(int numDoc) {
         return dao.getNombrePersona(numDoc);
     }
+    
+    /**
+     * Obtiene el estado actual de una cuenta (Activo/Inactivo).
+     * @param numDoc número de documento de la persona
+     * @return "Activo", "Inactivo" o "—" si no se encuentra la cuenta
+     */
+    public String getEstadoCuenta(int numDoc) {
+        return dao.getEstadoCuenta(numDoc);
+    }
 }

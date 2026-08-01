@@ -47,11 +47,16 @@ public class GeneradorReportesDAO {
                 "Fecha", "Día Semana",
                 "Total Ingresos", "Total Salidas", "Diferencia Neta",
                 "Primera Entrada", "Última Entrada");
+            /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+             * ESCANEOS QR - COMENTADO
+             * Este tipo de reporte fue comentado en TipoReporte.java por solicitud del usuario
+             * ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════
             case ESCANEOS_QR -> List.of(
                 "Fecha", "Hora",
                 "N° Doc", "Tipo Doc", "Nombres", "Apellidos",
                 "Programa", "N° Ficha",
                 "Tipo Movimiento", "Observación");
+             * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════*/
             case PERSONAL_SEGURIDAD -> List.of(
                 "Tipo Doc", "N° Doc", "Nombres", "Apellidos",
                 "Correo", "Teléfono",
@@ -68,7 +73,11 @@ public class GeneradorReportesDAO {
             case HISTORIAL_INGRESOS  -> getHistorialIngresos(f);
             case APRENDICES          -> getAprendices(f);
             case RESUMEN_GENERAL     -> getResumenGeneral(f);
+            /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+             * ESCANEOS QR - COMENTADO
+             * ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════
             case ESCANEOS_QR         -> getEscaneos(f);
+             * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════*/
             case PERSONAL_SEGURIDAD  -> getPersonalSeguridad(f);
         };
     }
@@ -77,6 +86,41 @@ public class GeneradorReportesDAO {
 
     private List<Map<String, Object>> getHistorialIngresos(FiltrosReporte f) {
         List<Object> params = new ArrayList<>();
+        
+        /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+         * ESTRUCTURA NUEVA DE BASE DE DATOS (desde cambio a BD "sena")
+         * ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+         * La relación con aprendiz ahora es indirecta: persona → ficha (si tiene id_ficha)
+         * Ya no existe tabla aprendiz, se identifica por cuenta con rol "Aprendiz"
+         * ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════*/
+        
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                hi.num_doc,
+                p.tip_doc,
+                p.nombres,
+                CONCAT(p.p_ape, IFNULL(CONCAT(' ', p.s_ape), ''))      AS apellidos,
+                IFNULL(pf.nom_prog, '')                                 AS programa,
+                IFNULL(cf.nom_centro, '')                               AS centro,
+                IFNULL(f.jornada, '')                                   AS jornada,
+                DATE(hi.fecha_hora_ingreso)                             AS fecha_ing,
+                TIME_FORMAT(hi.fecha_hora_ingreso, '%H:%i:%s')          AS hora_ing,
+                DATE(hi.fecha_hora_salida)                              AS fecha_sal,
+                TIME_FORMAT(hi.fecha_hora_salida,  '%H:%i:%s')          AS hora_sal,
+                CASE WHEN hi.fecha_hora_salida IS NOT NULL THEN 'Completo' ELSE 'Sin salida'
+                     END                                                 AS movimiento,
+                IFNULL(hi.observacion, '')                              AS observacion
+            FROM historial_ingreso hi
+            INNER JOIN persona          p   ON hi.num_doc      = p.num_doc
+            LEFT  JOIN ficha            f   ON p.num_doc       = f.num_doc
+            LEFT  JOIN programa_formacion pf ON f.id_programa  = pf.id_programa
+            LEFT  JOIN centro_formacion  cf ON pf.id_centro    = cf.id_centro
+            WHERE 1=1
+            """);
+
+        /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+         * CÓDIGO ANTIGUO - Usaba tabla aprendiz que ya no existe
+         * ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════
         StringBuilder sql = new StringBuilder("""
             SELECT
                 hi.num_doc,
@@ -101,6 +145,7 @@ public class GeneradorReportesDAO {
             LEFT  JOIN centro_formacion  cf ON pf.id_centro    = cf.id_centro
             WHERE 1=1
             """);
+         * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════*/
 
         appendFechaFiltros(sql, params, f, "hi.fecha_hora_ingreso");
 
@@ -125,6 +170,49 @@ public class GeneradorReportesDAO {
 
     private List<Map<String, Object>> getAprendices(FiltrosReporte f) {
         List<Object> params = new ArrayList<>();
+        
+        /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+         * ESTRUCTURA NUEVA DE BASE DE DATOS (desde cambio a BD "sena")
+         * ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+         * Tabla 'aprendiz' fue eliminada. Ahora se usa:
+         * - cuenta: tabla que relaciona personas con roles (id_cuenta, num_doc, id_rol, estado)
+         * - rol: define los roles (1=Aprendiz, 2=Administrador, 3=Guarda)
+         * - persona: datos personales (num_doc, nombres, p_ape, s_ape, email, tel, foto_perfil)
+         * - ficha: información de la ficha formativa (id_ficha, nom_ficha, jornada, fecha_inicio, fecha_fin)
+         * 
+         * Los aprendices se identifican por cuenta.id_rol = 1 (rol "Aprendiz")
+         * ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════*/
+        
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                p.tip_doc,
+                p.num_doc,
+                p.nombres,
+                CONCAT(p.p_ape, IFNULL(CONCAT(' ', p.s_ape), ''))     AS apellidos,
+                IFNULL(p.email, '')                                    AS email,
+                IFNULL(p.tel,   '')                                    AS tel,
+                IFNULL(f.nom_ficha, '')                                AS nom_ficha,
+                f.jornada,
+                IFNULL(pf.nom_prog, '')                                AS programa,
+                IFNULL(pf.siglas_prog, '')                             AS siglas_prog,
+                IFNULL(pf.nivel_formacion, '')                         AS nivel_formacion,
+                IFNULL(cf.nom_centro, '')                              AS centro,
+                IFNULL(cf.siglas_centro, '')                           AS siglas_centro,
+                IFNULL(DATE_FORMAT(f.fecha_inicio, '%d/%m/%Y'), '')    AS fecha_inicio,
+                IFNULL(DATE_FORMAT(f.fecha_fin,    '%d/%m/%Y'), '')    AS fecha_fin,
+                CASE c.estado WHEN 1 THEN 'Activo' ELSE 'Inactivo' END AS estado
+            FROM cuenta c
+            INNER JOIN rol              r   ON c.id_rol      = r.id_rol
+            INNER JOIN persona          p   ON c.num_doc     = p.num_doc
+            LEFT  JOIN ficha            f   ON p.num_doc     = f.num_doc
+            LEFT  JOIN programa_formacion pf ON f.id_programa = pf.id_programa
+            LEFT  JOIN centro_formacion  cf ON pf.id_centro   = cf.id_centro
+            WHERE r.nom_rol = 'Aprendiz'
+            """);
+
+        /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+         * CÓDIGO ANTIGUO - Usaba tabla aprendiz que ya no existe
+         * ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════
         StringBuilder sql = new StringBuilder("""
             SELECT
                 p.tip_doc,
@@ -153,6 +241,7 @@ public class GeneradorReportesDAO {
             LEFT  JOIN cuenta            c  ON a.num_doc      = c.num_doc
             WHERE 1=1
             """);
+         * ════════════════════════════════════════════════════════════════════════════════════════════════════════════════*/
 
         if (notNull(f.getEstadoAprendiz())) {
             sql.append(" AND c.estado = ? ");
@@ -207,37 +296,11 @@ public class GeneradorReportesDAO {
     }
 
     // ── 4. Escaneos QR ────────────────────────────────────────────────────────
-
-    private List<Map<String, Object>> getEscaneos(FiltrosReporte f) {
-        List<Object> params = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("""
-            SELECT
-                DATE(hi.fecha_hora_ingreso)                            AS fecha,
-                TIME_FORMAT(hi.fecha_hora_ingreso, '%H:%i:%s')         AS hora,
-                hi.num_doc,
-                p.tip_doc,
-                p.nombres,
-                CONCAT(p.p_ape, IFNULL(CONCAT(' ', p.s_ape), ''))     AS apellidos,
-                IFNULL(pf.nom_prog, '')                                AS programa,
-                IFNULL(f.nom_ficha, '')                                AS nom_ficha,
-                CASE WHEN hi.fecha_hora_salida IS NOT NULL THEN 'Completo' ELSE 'Sin salida'
-                     END                                                       AS movimiento,
-                IFNULL(hi.observacion, '')                             AS observacion
-            FROM historial_ingreso hi
-            INNER JOIN persona          p   ON hi.num_doc      = p.num_doc
-            LEFT  JOIN aprendiz         a   ON hi.num_doc      = a.num_doc
-            LEFT  JOIN ficha            f   ON a.id_ficha      = f.id_ficha
-            LEFT  JOIN programa_formacion pf ON f.id_programa  = pf.id_programa
-            WHERE 1=1
-            """);
-
-        appendFechaFiltros(sql, params, f, "hi.fecha_hora_ingreso");
-        sql.append(" ORDER BY hi.fecha_hora_ingreso DESC");
-
-        return query(sql.toString(), params,
-            "fecha","hora","num_doc","tip_doc","nombres","apellidos",
-            "programa","nom_ficha","movimiento","observacion");
-    }
+    /* ══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+     * ESCANEOS QR - ELIMINADO
+     * Este método fue eliminado porque el tipo de reporte ESCANEOS_QR fue comentado en TipoReporte.java
+     * por solicitud del usuario. Si se necesita en el futuro, revisar el historial de versiones.
+     * ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════*/
 
     // ── 5. Personal de Seguridad ──────────────────────────────────────────────
 

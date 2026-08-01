@@ -98,48 +98,103 @@ class RegistroPanel extends BaseFormPanel {
     }
 
     private void guardar() {
-        // ── Validaciones ──────────────────────────────────────────────────────
+        // ── Validaciones de Seguridad ─────────────────────────────────────────
         String tipDoc = (String) cmbTipDoc.getSelectedItem();
 
+        // Validar número de documento
         String numDocStr = txtNumDoc.getText().trim();
-        if (numDocStr.isEmpty() || numDocStr.equals("Ej: 1151940954")) {
-            markError(txtNumDoc); showError("El número de documento es obligatorio."); return;
+        if (numDocStr.isEmpty() || numDocStr.equals("0123456789")) {
+            markError(txtNumDoc); 
+            showError("El número de documento es obligatorio."); 
+            return;
         }
+        
+        // Validación de seguridad: verificar formato y rango
+        if (!InputValidator.isValidNumDoc(numDocStr)) {
+            markError(txtNumDoc);
+            showError("El número de documento debe ser un número válido.\n" +
+                     "Máximo: " + InputValidator.MAX_INT_VALUE);
+            return;
+        }
+        
         int numDoc;
-        try { numDoc = Integer.parseInt(numDocStr); }
-        catch (NumberFormatException ex) {
-            markError(txtNumDoc); showError("El número de documento debe ser numérico."); return;
+        try { 
+            numDoc = Integer.parseInt(numDocStr); 
+        } catch (NumberFormatException ex) {
+            markError(txtNumDoc); 
+            showError(InputValidator.getNumericErrorMessage("Número de documento")); 
+            return;
         }
         clearError(txtNumDoc);
 
-        String nombres = val(txtNombres, "Ej: Carlos Andrés");
-        if (nombres.isEmpty()) { markError(txtNombres); showError("Los nombres son obligatorios."); return; }
+        // Validar nombres
+        String nombres = val(txtNombres, "Personal Seguridad");
+        if (nombres.isEmpty()) { 
+            markError(txtNombres); 
+            showError("Los nombres son obligatorios."); 
+            return; 
+        }
+        if (!InputValidator.isValidLength(nombres, InputValidator.MAX_NOMBRES)) {
+            markError(txtNombres);
+            showError(InputValidator.getLengthErrorMessage("Nombres", InputValidator.MAX_NOMBRES));
+            return;
+        }
         clearError(txtNombres);
 
-        String apelRaw = val(txtApellidos, "Ej: López Martínez");
-        if (apelRaw.isEmpty()) { markError(txtApellidos); showError("El apellido es obligatorio."); return; }
+        // Validar apellidos
+        String apelRaw = val(txtApellidos, "Personal Seguridad");
+        if (apelRaw.isEmpty()) { 
+            markError(txtApellidos); 
+            showError("El apellido es obligatorio."); 
+            return; 
+        }
+        if (!InputValidator.isValidLength(apelRaw, InputValidator.MAX_APELLIDOS)) {
+            markError(txtApellidos);
+            showError(InputValidator.getLengthErrorMessage("Apellidos", InputValidator.MAX_APELLIDOS));
+            return;
+        }
         clearError(txtApellidos);
 
+        // Validar email
         String email = val(txtEmail, "ejemplo@correo.com");
-        if (email.isEmpty()) { markError(txtEmail); showError("El correo electrónico es obligatorio."); return; }
-        if (!validateEmail(email)) {
+        if (email.isEmpty()) { 
+            markError(txtEmail); 
+            showError("El correo electrónico es obligatorio."); 
+            return; 
+        }
+        if (!InputValidator.isValidEmail(email)) {
             markError(txtEmail);
-            showError("El correo electrónico no tiene un formato válido.\nEjemplo: usuario@dominio.com"); return;
+            showError("El correo electrónico no tiene un formato válido.\n" +
+                     "Ejemplo: usuario@dominio.com\n" +
+                     "Máximo: " + InputValidator.MAX_EMAIL + " caracteres");
+            return;
         }
         clearError(txtEmail);
+
+        // Validar teléfono (opcional)
+        String tel = val(txtTelefono, "3001234567");
+        if (!tel.isEmpty() && !InputValidator.isValidTelefono(tel)) {
+            markError(txtTelefono);
+            showError("El teléfono debe contener entre 7 y 10 dígitos numéricos.");
+            return;
+        }
+        clearError(txtTelefono);
 
         // ── Construir Persona con TODOS los campos ────────────────────────────
         Persona persona = new Persona();
         persona.setTipDoc(tipDoc);
         persona.setNumDoc(numDoc);
-        persona.setNombres(nombres);
+        
+        // Sanitizar datos antes de guardar (capa adicional de seguridad)
+        persona.setNombres(InputValidator.sanitize(nombres));
+        
         String[] apes = apelRaw.split("\\s+", 2);
-        persona.setPApe(apes[0]);
-        persona.setSApe(apes.length > 1 ? apes[1] : null);
-        persona.setEmail(email);
+        persona.setPApe(InputValidator.sanitize(apes[0]));
+        persona.setSApe(apes.length > 1 ? InputValidator.sanitize(apes[1]) : null);
+        
+        persona.setEmail(email.toLowerCase().trim()); // Email siempre en minúsculas
 
         // Teléfono
-        String tel = val(txtTelefono, "Ej: 3001234567");
         if (!tel.isEmpty()) persona.setTel(tel);
 
         // Fecha de nacimiento
@@ -157,11 +212,36 @@ class RegistroPanel extends BaseFormPanel {
         PersonalSeguridad guardia = new PersonalSeguridad();
         String turnoSel = (String) cmbTurno.getSelectedItem();
         guardia.setTurno("-- Seleccione turno --".equals(turnoSel) ? null : turnoSel);
-        String empresa = val(txtEmpresa, "Ej: Seguridad Total S.A.S");
-        guardia.setEmpresaSeg(empresa.isEmpty() ? null : empresa);
+        
+        String empresa = val(txtEmpresa, "Empresa Seguridad");
+        if (!empresa.isEmpty()) {
+            if (!InputValidator.isValidLength(empresa, InputValidator.MAX_EMPRESA)) {
+                markError(txtEmpresa);
+                showError(InputValidator.getLengthErrorMessage("Empresa de Seguridad", InputValidator.MAX_EMPRESA));
+                return;
+            }
+            guardia.setEmpresaSeg(InputValidator.sanitize(empresa));
+        } else {
+            guardia.setEmpresaSeg(null);
+        }
+        clearError(txtEmpresa);
 
         // Estado de la cuenta (Activo/Inactivo)
         boolean activo = !"Inactivo".equals(cmbEstado.getSelectedItem());
+
+        // ── Guardar foto de perfil si se seleccionó ───────────────────────────
+        String rutaFotoGuardada = null;
+        if (fotoBytes != null && fotoNombreArchivo != null) {
+            rutaFotoGuardada = guardarArchivoFoto(numDoc, fotoNombreArchivo, fotoBytes);
+            
+            if (rutaFotoGuardada == null) {
+                showError("Error al guardar la foto de perfil. Verifique el formato y tamaño.");
+                return;
+            }
+            
+            // Asignar ruta de foto a la persona
+            persona.setFotoPerfil(rutaFotoGuardada);
+        }
 
         // ── Guardar en hilo separado ──────────────────────────────────────────
         JButton btnGuardar = (JButton)((JPanel) getComponent(2)).getComponent(0);
@@ -203,28 +283,94 @@ class RegistroPanel extends BaseFormPanel {
 
     private void limpiar() {
         cmbTipDoc.setSelectedIndex(0);
-        resetField(txtNumDoc,    "Ej: 1151940954");
-        resetField(txtNombres,   "Ej: Carlos Andrés");
-        resetField(txtApellidos, "Ej: López Martínez");
+        resetField(txtNumDoc,    "0123456789");
+        resetField(txtNombres,   "Personal Seguridad");
+        resetField(txtApellidos, "Personal Seguridad");
         resetField(txtEmail,     "ejemplo@correo.com");
-        resetField(txtTelefono,  "Ej: 3001234567");
+        resetField(txtTelefono,  "3001234567");
         resetField(txtFechaNac,  "dd/mm/aaaa");
         fechaSeleccionada = null;
         cmbTipSang.setSelectedIndex(0);
         cmbGenero.setSelectedIndex(0);
-        resetField(txtEmpresa,   "Ej: Seguridad Total S.A.S");
+        resetField(txtEmpresa,   "Empresa Seguridad");
         cmbTurno.setSelectedIndex(0);
         cmbEstado.setSelectedIndex(0);
+        
+        // Limpiar foto de perfil
+        eliminarFoto();
     }
 
+    /**
+     * Restablece un campo de texto a su estado inicial con placeholder.
+     * 
+     * @param f Campo de texto
+     * @param ph Texto del placeholder
+     */
     private void resetField(JTextField f, String ph) {
         if (f == null) return;
         f.setText(ph);
         f.setForeground(new java.awt.Color(0xAAAAAA));
         f.setBorder(new javax.swing.border.LineBorder(BORDER_C, 1, true));
+        // Asegurar que el caret no esté visible cuando está el placeholder
+        f.getCaret().setVisible(false);
     }
 
     private void showError(String msg) {
         JOptionPane.showMessageDialog(this, msg, "Error de validación", JOptionPane.WARNING_MESSAGE);
+    }
+    
+    /**
+     * Guarda el archivo de foto en disco y retorna la ruta relativa.
+     * 
+     * @param numDoc Número de documento del personal
+     * @param nombreArchivo Nombre original del archivo
+     * @param datos Bytes del archivo
+     * @return Ruta relativa del archivo guardado, o null si hubo error
+     */
+    private String guardarArchivoFoto(int numDoc, String nombreArchivo, byte[] datos) {
+        if (datos == null || datos.length == 0) return null;
+        
+        // Validar tamaño máximo (2 MB)
+        if (datos.length > 2 * 1024 * 1024) return null;
+        
+        // Validar extensión
+        String ext = obtenerExtension(nombreArchivo).toLowerCase();
+        if (!ext.equals("jpg") && !ext.equals("jpeg") 
+                && !ext.equals("png") && !ext.equals("webp")) {
+            return null;
+        }
+        
+        // Crear directorio si no existe
+        String uploadDir = "uploads/perfiles/";
+        java.nio.file.Path dir = java.nio.file.Paths.get(uploadDir);
+        try {
+            java.nio.file.Files.createDirectories(dir);
+        } catch (java.io.IOException e) {
+            System.err.println("Error creando directorio: " + e.getMessage());
+            return null;
+        }
+        
+        // Nombre único: numDoc_timestamp.ext
+        String nombreUnico = numDoc + "_" + System.currentTimeMillis() + "." + ext;
+        java.nio.file.Path destino = dir.resolve(nombreUnico);
+        
+        try {
+            java.nio.file.Files.write(destino, datos);
+            return uploadDir + nombreUnico;
+        } catch (java.io.IOException e) {
+            System.err.println("Error guardando foto: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Obtiene la extensión de un archivo.
+     * 
+     * @param nombreArchivo Nombre del archivo
+     * @return Extensión sin el punto, o cadena vacía si no tiene
+     */
+    private String obtenerExtension(String nombreArchivo) {
+        if (nombreArchivo == null || !nombreArchivo.contains(".")) return "";
+        return nombreArchivo.substring(nombreArchivo.lastIndexOf('.') + 1);
     }
 }

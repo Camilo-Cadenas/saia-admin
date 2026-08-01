@@ -8,7 +8,6 @@
             "mainClass": "com.saia.Main",
             "projectName": "saia-admin",
             "vmArgs": "-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8",
-            "classPaths": ["${command:java.project.getClasspathVariables}"],
             "console": "internalConsole",
             "shortenCommandLine": "jarmanifest"
         }

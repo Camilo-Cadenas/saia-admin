@@ -1,20 +1,29 @@
 package com.saia.model;
 
 /**
- * Entidad que representa la tabla {@code aprendiz}.
- * num_doc → INT (nueva BD).
+ * Entidad que representa un Aprendiz en el sistema.
+ * 
+ * ESTRUCTURA NUEVA (Base de datos 'sena'):
+ * - Ya NO existe la tabla 'aprendiz' independiente
+ * - Los aprendices son personas con id_rol=1 (Aprendiz) en la tabla cuenta
+ * - idAprendiz ahora contiene el id_cuenta del usuario
+ * - idFicha ya no está disponible (sin relación directa)
+ * 
+ * ESTRUCTURA ANTIGUA (Comentada):
+ * - tabla aprendiz → id_aprendiz, num_doc, id_ficha
+ * - Relación directa con ficha y programa
  */
 public class Aprendiz {
 
-    private int    idAprendiz;
-    private int    numDoc;     // FK → persona.num_doc (INT)
-    private int    idFicha;    // FK → ficha
+    private int    idAprendiz;   // NUEVO: Ahora es id_cuenta (antes era id_aprendiz de tabla aprendiz)
+    private int    numDoc;       // FK → persona.num_doc (INT)
+    private int    idFicha;      // DEPRECADO: Ya no hay relación directa con ficha
 
     private Persona persona;
-    private Ficha   ficha;
+    private Ficha   ficha;       // DEPRECADO: Ya no se carga automáticamente
     private boolean cuentaActiva  = true;
-    private String  siglasProg    = "";   // siglas del programa de formación
-    private String  siglasCentro  = "";   // siglas del centro de formación
+    private String  siglasProg    = "";   // DEPRECADO: No disponible sin relación con ficha
+    private String  siglasCentro  = "";   // DEPRECADO: No disponible sin relación con ficha
 
     public Aprendiz() {}
 

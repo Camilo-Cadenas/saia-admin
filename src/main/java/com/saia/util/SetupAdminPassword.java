@@ -24,7 +24,7 @@ public class SetupAdminPassword {
     public static void main(String[] args) {
         System.out.println("=== SAIA - Configuración de contraseña de administrador ===");
         System.out.println("Mail    : " + MAIL);
-        System.out.println("Password: " + PASSWORD.replaceAll(".", "*"));
+        System.out.println("Password: " + "*".repeat(PASSWORD.length()));
 
         String hash = PasswordUtil.hashPassword(PASSWORD);
         System.out.println("Hash    : " + hash);
@@ -34,9 +34,11 @@ public class SetupAdminPassword {
 
             // ── 1. Verificar que existe en tabla cuenta ────────────────────────
             String sqlCheck = "SELECT id_cuenta, num_doc, estado FROM cuenta WHERE LOWER(mail) = LOWER(?)";
-            int idCuenta = -1;
-            int numDoc   = -1;
-            boolean existe = false;
+            @SuppressWarnings("UnusedAssignment")
+            final int idCuenta;
+            @SuppressWarnings("UnusedAssignment")
+            final int numDoc;
+            final boolean existe;
 
             try (PreparedStatement ps = cn.prepareStatement(sqlCheck)) {
                 ps.setString(1, MAIL);
@@ -48,6 +50,11 @@ public class SetupAdminPassword {
                         System.out.println("\nCuenta encontrada: id_cuenta=" + idCuenta
                                 + ", num_doc=" + numDoc
                                 + ", estado=" + rs.getBoolean("estado"));
+                    } else {
+                        // Valores para satisfacer análisis de asignación definitiva
+                        idCuenta = 0;
+                        numDoc   = 0;
+                        existe   = false;
                     }
                 }
             }
@@ -55,16 +62,18 @@ public class SetupAdminPassword {
             if (!existe) {
                 // ── 2. Buscar la persona por email si no hay cuenta ────────────
                 String sqlPer = "SELECT num_doc FROM persona WHERE LOWER(email) = LOWER(?)";
+                final int numDocPersona;
                 try (PreparedStatement ps = cn.prepareStatement(sqlPer)) {
                     ps.setString(1, MAIL);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
-                            numDoc = rs.getInt("num_doc");
-                            System.out.println("Persona encontrada con num_doc=" + numDoc);
+                            numDocPersona = rs.getInt("num_doc");
+                            System.out.println("Persona encontrada con num_doc=" + numDocPersona);
                         } else {
                             System.err.println("ERROR: No existe ningún registro con mail: " + MAIL);
                             System.err.println("Verifique que el email existe en tabla persona o cuenta.");
                             System.exit(1);
+                            return; // Para satisfacer análisis de flujo
                         }
                     }
                 }
@@ -72,10 +81,10 @@ public class SetupAdminPassword {
                 // Verificar si es administrador
                 String sqlAdmin = "SELECT id_admin FROM administrador WHERE num_doc = ?";
                 try (PreparedStatement ps = cn.prepareStatement(sqlAdmin)) {
-                    ps.setInt(1, numDoc);
+                    ps.setInt(1, numDocPersona);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (!rs.next()) {
-                            System.err.println("ERROR: num_doc=" + numDoc + " no está en tabla administrador.");
+                            System.err.println("ERROR: num_doc=" + numDocPersona + " no está en tabla administrador.");
                             System.exit(1);
                         }
                     }
@@ -84,11 +93,11 @@ public class SetupAdminPassword {
                 // Crear cuenta (id_rol=1 para Administrador)
                 String sqlInsert = "INSERT INTO cuenta (id_rol, num_doc, mail, password_hash, estado) VALUES (1, ?, ?, ?, TRUE)";
                 try (PreparedStatement ps = cn.prepareStatement(sqlInsert)) {
-                    ps.setInt   (1, numDoc);
+                    ps.setInt   (1, numDocPersona);
                     ps.setString(2, MAIL.toLowerCase());
                     ps.setString(3, hash);
                     ps.executeUpdate();
-                    System.out.println("Cuenta creada para num_doc=" + numDoc + " ✓");
+                    System.out.println("Cuenta creada para num_doc=" + numDocPersona + " ✓");
                 }
             } else {
                 // ── 3. Actualizar password_hash en cuenta existente ────────────
@@ -128,7 +137,6 @@ public class SetupAdminPassword {
 
         } catch (SQLException e) {
             System.err.println("\nERROR de base de datos: " + e.getMessage());
-            e.printStackTrace();
         } finally {
             ConnectionPool.getInstance().shutdown();
         }

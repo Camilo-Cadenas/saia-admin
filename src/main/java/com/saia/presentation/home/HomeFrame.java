@@ -249,6 +249,7 @@ public class HomeFrame extends JFrame {
         userAvatarPanel = new JPanel() {
             private ImageIcon userPhoto = null;
             
+            @SuppressWarnings("unused") // Usado mediante reflexión en cargarFotoUsuario()
             public void actualizarFoto(ImageIcon icon) {
                 this.userPhoto = icon;
                 repaint();
@@ -326,7 +327,7 @@ public class HomeFrame extends JFrame {
                     
                     Image scaled = img.getScaledInstance(32, 32, Image.SCALE_SMOOTH);
                     return new ImageIcon(scaled);
-                } catch (Exception e) {
+                } catch (java.io.IOException e) {
                     System.err.println("[HomeFrame] Error cargando foto: " + e.getMessage());
                     return null;
                 }
@@ -342,7 +343,7 @@ public class HomeFrame extends JFrame {
                             userAvatarPanel.getClass()
                                 .getMethod("actualizarFoto", ImageIcon.class)
                                 .invoke(userAvatarPanel, icon);
-                        } catch (Exception e) {
+                        } catch (ReflectiveOperationException e) {
                             System.err.println("[HomeFrame] Error actualizando avatar: " + e.getMessage());
                         }
                     }

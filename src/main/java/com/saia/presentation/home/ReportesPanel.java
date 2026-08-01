@@ -274,7 +274,7 @@ public class ReportesPanel extends JPanel {
         reporteTable.setFocusable(false);
 
         // Anchos de columnas
-        int[] w = {130, 160, 110, 160, 110, 130, 200, 70};
+        int[] w = {130, 160, 110, 160, 110, 130, 200, 110};
         for (int i = 0; i < w.length; i++) reporteTable.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
 
         // Renderer y editor de la columna Acciones (ojo)
@@ -327,33 +327,46 @@ public class ReportesPanel extends JPanel {
     private static class OjoRenderer implements TableCellRenderer {
         @Override public Component getTableCellRendererComponent(JTable t, Object v,
                 boolean sel, boolean foc, int r, int c) {
-            JLabel lbl = new JLabel();
-            lbl.setIcon(com.saia.presentation.IconUtil.icon(
-                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 16, new Color(0x2563EB)));
-            lbl.setHorizontalAlignment(SwingConstants.CENTER);
-            lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            lbl.setOpaque(true);
-            lbl.setBackground(sel ? new Color(0xE8F0FB) : CARD_BG);
-            return lbl;
+            JButton btn = new JButton("  Ver Detalle");
+            btn.setIcon(com.saia.presentation.IconUtil.icon(
+                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 14, Color.WHITE));
+            btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btn.setForeground(Color.WHITE);
+            btn.setBackground(new Color(0x2563EB));
+            btn.setFocusPainted(false);
+            btn.setBorderPainted(false);
+            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btn.setOpaque(true);
+            return btn;
         }
     }
 
     private class OjoEditor extends DefaultCellEditor {
         private FilaReporte filaActual;
-        private final JLabel lbl;
+        private final JButton btn;
 
         OjoEditor(ReportesPanel p) {
             super(new JCheckBox());
-            lbl = new JLabel();
-            lbl.setIcon(com.saia.presentation.IconUtil.icon(
-                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 16, new Color(0x2563EB)));
-            lbl.setHorizontalAlignment(SwingConstants.CENTER);
-            lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            lbl.setOpaque(true);
-            lbl.addMouseListener(new MouseAdapter() {
+            btn = new JButton("  Ver Detalle");
+            btn.setIcon(com.saia.presentation.IconUtil.icon(
+                org.kordamp.ikonli.fontawesome5.FontAwesomeSolid.EYE, 14, Color.WHITE));
+            btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btn.setForeground(Color.WHITE);
+            btn.setBackground(new Color(0x2563EB));
+            btn.setFocusPainted(false);
+            btn.setBorderPainted(false);
+            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btn.setOpaque(true);
+            btn.addMouseListener(new MouseAdapter() {
                 @Override public void mouseClicked(MouseEvent e) {
                     fireEditingStopped();
                     if (filaActual != null) mostrarDetalleReporte(filaActual);
+                }
+                @Override public void mouseEntered(MouseEvent e) {
+                    btn.setBackground(new Color(0x1D4ED8));
+                }
+                @Override public void mouseExited(MouseEvent e) {
+                    btn.setBackground(new Color(0x2563EB));
                 }
             });
         }
@@ -361,8 +374,7 @@ public class ReportesPanel extends JPanel {
         @Override public Component getTableCellEditorComponent(JTable t, Object v,
                 boolean sel, int r, int c) {
             filaActual = (r >= 0 && r < listaReportes.size()) ? listaReportes.get(r) : null;
-            lbl.setBackground(new Color(0xE8F0FB));
-            return lbl;
+            return btn;
         }
         @Override public Object getCellEditorValue() { return filaActual; }
     }
@@ -597,6 +609,7 @@ public class ReportesPanel extends JPanel {
                 g2.dispose();
             }
             
+            @SuppressWarnings("unused") // Usado mediante reflexión en cargarFotoUsuario()
             public void setUserPhoto(javax.swing.ImageIcon icon) {
                 this.userPhoto = icon;
                 repaint();
@@ -616,27 +629,52 @@ public class ReportesPanel extends JPanel {
         new javax.swing.SwingWorker<javax.swing.ImageIcon, Void>() {
             @Override
             protected javax.swing.ImageIcon doInBackground() {
+                System.out.println("[ReportesPanel] Intentando cargar foto de " + 
+                    (esGuardia ? "guardia" : "aprendiz") + " con num_doc: " + numDoc);
                 try {
-                    com.saia.business.ConfiguracionService configService = new com.saia.business.ConfiguracionService();
-                    java.util.Optional<com.saia.data.ConfiguracionDAO.PerfilAdmin> perfilOpt = 
-                        configService.cargarPerfil(numDoc);
+                    // Cargar foto directamente desde la tabla persona
+                    String sql = "SELECT foto_perfil FROM persona WHERE num_doc = ?";
                     
-                    if (perfilOpt.isEmpty()) return null;
-                    
-                    String rutaFoto = perfilOpt.get().fotoPerfil();
-                    if (rutaFoto == null || rutaFoto.isBlank()) return null;
-                    
-                    java.io.File f = new java.io.File(rutaFoto);
-                    if (!f.exists()) return null;
-                    
-                    java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
-                    if (img == null) return null;
-                    
-                    java.awt.Image scaled = img.getScaledInstance(70, 70, java.awt.Image.SCALE_SMOOTH);
-                    return new javax.swing.ImageIcon(scaled);
-                } catch (Exception e) {
+                    try (java.sql.Connection conn = com.saia.db.ConnectionPool.getInstance().getConnection();
+                         java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                        
+                        ps.setInt(1, numDoc);
+                        System.out.println("[ReportesPanel] Ejecutando query: " + sql + " con num_doc=" + numDoc);
+                        
+                        try (java.sql.ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                String rutaFoto = rs.getString("foto_perfil");
+                                System.out.println("[ReportesPanel] Ruta foto encontrada: " + rutaFoto);
+                                
+                                if (rutaFoto != null && !rutaFoto.isBlank()) {
+                                    java.io.File f = new java.io.File(rutaFoto);
+                                    System.out.println("[ReportesPanel] Verificando archivo: " + f.getAbsolutePath());
+                                    System.out.println("[ReportesPanel] Archivo existe: " + f.exists());
+                                    
+                                    if (f.exists()) {
+                                        java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(f);
+                                        if (img != null) {
+                                            System.out.println("[ReportesPanel] Imagen cargada exitosamente, escalando...");
+                                            java.awt.Image scaled = img.getScaledInstance(70, 70, java.awt.Image.SCALE_SMOOTH);
+                                            return new javax.swing.ImageIcon(scaled);
+                                        } else {
+                                            System.err.println("[ReportesPanel] ImageIO.read() retornó null");
+                                        }
+                                    } else {
+                                        System.err.println("[ReportesPanel] El archivo no existe en el sistema");
+                                    }
+                                } else {
+                                    System.out.println("[ReportesPanel] foto_perfil es null o vacío en BD");
+                                }
+                            } else {
+                                System.err.println("[ReportesPanel] No se encontró registro con num_doc=" + numDoc);
+                            }
+                        }
+                    }
+                    return null;
+                } catch (java.sql.SQLException | java.io.IOException e) {
                     System.err.println("[ReportesPanel] Error cargando foto de " + 
-                        (esGuardia ? "guardia" : "aprendiz") + ": " + e.getMessage());
+                        (esGuardia ? "guardia" : "aprendiz") + " (doc: " + numDoc + "): " + e.getMessage());
                     return null;
                 }
             }
@@ -645,13 +683,24 @@ public class ReportesPanel extends JPanel {
             protected void done() {
                 try {
                     javax.swing.ImageIcon icon = get();
+                    System.out.println("[ReportesPanel] done() - icon obtenido: " + (icon != null ? "SÍ" : "NO"));
+                    
                     if (icon != null && avatarPanel != null) {
+                        System.out.println("[ReportesPanel] Intentando actualizar avatar panel...");
                         try {
                             avatarPanel.getClass()
                                 .getMethod("setUserPhoto", javax.swing.ImageIcon.class)
                                 .invoke(avatarPanel, icon);
-                        } catch (Exception e) {
+                            System.out.println("[ReportesPanel] Avatar actualizado exitosamente");
+                        } catch (ReflectiveOperationException e) {
                             System.err.println("[ReportesPanel] Error actualizando avatar: " + e.getMessage());
+                        }
+                    } else {
+                        if (icon == null) {
+                            System.err.println("[ReportesPanel] Icon es null, no se puede actualizar avatar");
+                        }
+                        if (avatarPanel == null) {
+                            System.err.println("[ReportesPanel] avatarPanel es null");
                         }
                     }
                 } catch (InterruptedException | java.util.concurrent.ExecutionException ex) {

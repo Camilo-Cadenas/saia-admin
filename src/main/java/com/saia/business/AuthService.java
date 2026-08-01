@@ -101,7 +101,6 @@ public class AuthService {
 
         } catch (DataAccessException e) {
             System.err.println("[AuthService] Error BD: " + e.getMessage());
-            e.printStackTrace();
             return AuthResult.DB_ERROR;
         }
     }

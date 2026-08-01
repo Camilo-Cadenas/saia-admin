@@ -41,7 +41,9 @@ import javax.swing.text.DocumentFilter;
 
 import com.saia.business.AprendizService;
 import com.saia.business.AprendizService.EstadoResult;
+import com.saia.business.FichaAprendizService;
 import com.saia.model.Aprendiz;
+import com.saia.model.FichaAprendiz;
 import com.saia.model.Persona;
 import com.saia.presentation.UITheme;
 
@@ -60,13 +62,14 @@ public class AprendicesPanel extends JPanel {
 
     private static final String[] COLS = {
         "#", "Tipo Doc", "N° Documento", "Nombres", "Apellidos",
-        "Correo", "Centro", "Nombre Ficha", "N° Ficha", "Estado", "Acción"
+        "Correo", "Centro", "Nombre Ficha", "N° Ficha", "Ficha Asignada", "Estado", "Acción"
     };
 
-    private final AprendizService        service    = new AprendizService();
-    private final DefaultTableModel      tableModel = buildTableModel();
-    private final JTable                 table      = buildTable();
-    private       List<Aprendiz>         todos      = new ArrayList<>();
+    private final AprendizService        service          = new AprendizService();
+    private final FichaAprendizService   fichaService    = new FichaAprendizService();
+    private final DefaultTableModel      tableModel      = buildTableModel();
+    private final JTable                 table           = buildTable();
+    private       List<Aprendiz>         todos           = new ArrayList<>();
 
     private JTextField txtBuscarDoc;
     private JTextField txtBuscarFicha;
@@ -242,7 +245,7 @@ public class AprendicesPanel extends JPanel {
 
     private DefaultTableModel buildTableModel() {
         return new DefaultTableModel(COLS, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return c == 10; }
+            @Override public boolean isCellEditable(int r, int c) { return c == 11; } // Ajustado para nueva columna
             @Override public Class<?> getColumnClass(int c) {
                 return c == 0 ? Integer.class : Object.class;
             }
@@ -258,21 +261,21 @@ public class AprendicesPanel extends JPanel {
         
         // Aplicar centrado a todas las columnas excepto Acción
         for (int i = 0; i < COLS.length - 1; i++) {
-            if (i != 9) { // Col 9 ya tiene EstadoRenderer que incluye centrado
+            if (i != 10) { // Col 10 ya tiene EstadoRenderer que incluye centrado
                 t.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
             }
         }
         
-        // Columna Estado (índice 9) con badge
-        t.getColumnModel().getColumn(9).setCellRenderer(new EstadoRenderer());
-        // Columna Acción (índice 10)
-        t.getColumnModel().getColumn(10).setCellRenderer(new AccionRenderer());
-        t.getColumnModel().getColumn(10).setCellEditor(new AccionEditor(this));
-        // Anchos: #, N°Doc, TipDoc, Nombres, Apellidos, Email, NomFicha, N°Ficha, Centro, Estado, Acción
-        int[] w = {32, 110, 65, 130, 135, 185, 120, 80, 70, 80, 115};
+        // Columna Estado (índice 10) con badge
+        t.getColumnModel().getColumn(10).setCellRenderer(new EstadoRenderer());
+        // Columna Acción (índice 11)
+        t.getColumnModel().getColumn(11).setCellRenderer(new AccionRenderer());
+        t.getColumnModel().getColumn(11).setCellEditor(new AccionEditor(this));
+        // Anchos: #, TipDoc, N°Doc, Nombres, Apellidos, Email, Centro, NomFicha, N°Ficha, FichaAsignada, Estado, Acción
+        int[] w = {32, 65, 110, 130, 135, 185, 70, 120, 80, 120, 80, 115};
         for (int i = 0; i < w.length; i++) t.getColumnModel().getColumn(i).setPreferredWidth(w[i]);
         t.getColumnModel().getColumn(0).setMaxWidth(32);
-        t.getColumnModel().getColumn(10).setMinWidth(112);
+        t.getColumnModel().getColumn(11).setMinWidth(112);
         return t;
     }
 
@@ -332,12 +335,26 @@ public class AprendicesPanel extends JPanel {
     private void poblarTabla(List<Aprendiz> lista) {
         tableModel.setRowCount(0);
         if (lista.isEmpty()) {
-            tableModel.addRow(new Object[]{"", "", "Sin aprendices registrados", "", "", "", "", "", "", "", ""});
+            tableModel.addRow(new Object[]{"", "", "Sin aprendices registrados", "", "", "", "", "", "", "", "", ""});
             return;
         }
         int i = 1;
         for (Aprendiz a : lista) {
             Persona p = a.getPersona();
+            
+            // Obtener ficha asignada desde el servicio de fichas
+            String fichaAsignada = "Sin asignar";
+            try {
+                FichaAprendiz fichaActual = fichaService.obtenerFichaDeAprendiz(a.getIdAprendiz());
+                if (fichaActual != null && fichaActual.isActivo()) {
+                    fichaAsignada = fichaActual.getNomFicha();
+                }
+            } catch (Exception e) {
+                System.err.println("[AprendicesPanel] Error obteniendo ficha de aprendiz " + 
+                                 a.getIdAprendiz() + ": " + e.getMessage());
+                // Si hay error, dejamos "Sin asignar"
+            }
+            
             tableModel.addRow(new Object[]{
                 i++,
                 p != null ? nvl(p.getTipDoc()) : "",
@@ -348,6 +365,7 @@ public class AprendicesPanel extends JPanel {
                 nvl(a.getSiglasCentro(), "—"),
                 nvl(a.getSiglasProg(),   "—"),
                 a.getIdFicha() > 0 ? a.getIdFicha() : "—",
+                fichaAsignada,  // Nueva columna con nombre de ficha asignada
                 a.isCuentaActiva() ? "Activa" : "Inactiva",
                 a  // objeto completo para el editor
             });

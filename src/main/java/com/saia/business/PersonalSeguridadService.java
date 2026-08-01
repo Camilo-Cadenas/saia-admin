@@ -23,7 +23,12 @@ import com.saia.util.SessionManager;
  */
 public class PersonalSeguridadService {
 
-    /** id_rol = 3 para Guarda (antes Personal de Seguridad) */
+    /** 
+     * id_rol = 3 para Guarda/Personal de Seguridad
+     * IMPORTANTE: Verificar que en la tabla 'rol' de la BD exista el registro:
+     *   id_rol = 3, nom_rol = 'Guarda' o 'Personal de Seguridad'
+     * Si no existe, crear con: INSERT INTO rol (id_rol, nom_rol) VALUES (3, 'Guarda');
+     */
     private static final int ID_ROL_PERSONAL = 3;
 
     public enum RegistroResult {
@@ -72,25 +77,41 @@ public class PersonalSeguridadService {
      */
     public RegistroResult registrar(Persona persona, PersonalSeguridad guardia, boolean activo) {
 
+        System.out.println("[PersonalSeguridadService] ═══ INICIO REGISTRO ═══");
+        System.out.println("[PersonalSeguridadService] Datos recibidos:");
+        System.out.println("  - Num Doc: " + persona.getNumDoc());
+        System.out.println("  - Tip Doc: " + persona.getTipDoc());
+        System.out.println("  - Nombres: " + persona.getNombres());
+        System.out.println("  - Primer Apellido: " + persona.getPApe());
+        System.out.println("  - Email: " + persona.getEmail());
+        System.out.println("  - Turno: " + (guardia != null ? guardia.getTurno() : "null"));
+        System.out.println("  - Empresa: " + (guardia != null ? guardia.getEmpresaSeg() : "null"));
+        System.out.println("  - Estado cuenta: " + (activo ? "ACTIVO" : "INACTIVO"));
+        
         // 1. Validar obligatorios
         if (isBlank(persona.getNombres())
                 || isBlank(persona.getPApe())
                 || isBlank(persona.getEmail())
                 || isBlank(persona.getTipDoc())
                 || persona.getNumDoc() == 0) {
+            System.err.println("[PersonalSeguridadService] ERROR: Faltan campos obligatorios");
             return RegistroResult.CAMPO_REQUERIDO;
         }
 
         try {
             // 2. Verificar documento duplicado en persona
+            System.out.println("[PersonalSeguridadService] Verificando documento duplicado...");
             if (personaDAO.existsByNumDoc(persona.getNumDoc())) {
+                System.err.println("[PersonalSeguridadService] ERROR: Documento " + persona.getNumDoc() + " ya existe");
                 return RegistroResult.DOC_DUPLICADO;
             }
 
             // 3. Verificar email duplicado en cuenta
+            System.out.println("[PersonalSeguridadService] Verificando email duplicado...");
             Optional<com.saia.model.Cuenta> cuentaExiste =
                     cuentaDAO.findByMail(persona.getEmail());
             if (cuentaExiste.isPresent()) {
+                System.err.println("[PersonalSeguridadService] ERROR: Email " + persona.getEmail() + " ya existe");
                 return RegistroResult.EMAIL_DUPLICADO;
             }
 
@@ -103,19 +124,30 @@ public class PersonalSeguridadService {
             String hashTemp  = PasswordUtil.hashPassword(passTemp);
 
             // 4. INSERT persona
+            System.out.println("[PersonalSeguridadService] Insertando en tabla persona...");
             personaDAO.insert(persona);
+            System.out.println("[PersonalSeguridadService] ✓ Persona insertada");
 
             // 5. INSERT personal_seguridad con turno y empresa si vienen
+            System.out.println("[PersonalSeguridadService] Insertando en tabla personal_seguridad...");
             guardaDAO.insert(
                 persona.getNumDoc(),
                 guardia != null ? guardia.getTurno()      : null,
                 guardia != null ? guardia.getEmpresaSeg() : null
             );
+            System.out.println("[PersonalSeguridadService] ✓ Personal seguridad insertado");
 
             // 6. INSERT cuenta con el estado elegido por el usuario
+            System.out.println("[PersonalSeguridadService] Insertando en tabla cuenta...");
+            System.out.println("  - id_rol: " + ID_ROL_PERSONAL);
+            System.out.println("  - num_doc: " + persona.getNumDoc());
+            System.out.println("  - mail: " + emailNorm);
+            System.out.println("  - estado: " + activo);
             cuentaDAO.insert(ID_ROL_PERSONAL, persona.getNumDoc(), emailNorm, hashTemp, activo);
+            System.out.println("[PersonalSeguridadService] ✓ Cuenta insertada");
 
             // 7. Registrar en auditoría
+            System.out.println("[PersonalSeguridadService] Registrando auditoría...");
             String desc = "Se creó la cuenta de " + persona.getNombreCompleto()
                     + " (N° doc: " + persona.getNumDoc() + ")";
             Integer adminDoc = null;
@@ -129,15 +161,20 @@ public class PersonalSeguridadService {
                 desc,
                 adminDoc
             );
+            System.out.println("[PersonalSeguridadService] ✓ Auditoría registrada");
 
-            System.out.println("[PersonalSeguridadService] Registrado: "
-                    + persona.getNombreCompleto()
-                    + " | contraseña temporal: " + passTemp);
+            System.out.println("[PersonalSeguridadService] ═══ REGISTRO EXITOSO ═══");
+            System.out.println("[PersonalSeguridadService] Usuario: " + persona.getNombreCompleto());
+            System.out.println("[PersonalSeguridadService] Contraseña temporal: " + passTemp);
 
             return RegistroResult.OK;
 
         } catch (DataAccessException e) {
-            System.err.println("[PersonalSeguridadService] Error BD: " + e.getMessage());
+            System.err.println("[PersonalSeguridadService] ═══ ERROR EN BASE DE DATOS ═══");
+            System.err.println("[PersonalSeguridadService] Mensaje: " + e.getMessage());
+            @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+            Throwable causa = e.getCause();
+            System.err.println("[PersonalSeguridadService] Causa: " + (causa != null ? causa.getMessage() : "N/A"));
             return RegistroResult.ERROR_BD;
         }
     }

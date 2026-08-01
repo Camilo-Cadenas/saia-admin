@@ -39,21 +39,24 @@ public class DashboardDAO {
 
     // ── Aprendices ────────────────────────────────────────────────────────────
     public int countAprendicesTotal() {
-        return queryInt("SELECT COUNT(*) FROM aprendiz");
+        return queryInt(
+            "SELECT COUNT(*) FROM cuenta c " +
+            "INNER JOIN rol r ON c.id_rol = r.id_rol " +
+            "WHERE r.nom_rol = 'Aprendiz'");
     }
 
     public int countAprendicesActivos() {
         return queryInt(
-            "SELECT COUNT(*) FROM aprendiz a " +
-            "INNER JOIN cuenta c ON a.num_doc = c.num_doc " +
-            "WHERE c.estado = TRUE");
+            "SELECT COUNT(*) FROM cuenta c " +
+            "INNER JOIN rol r ON c.id_rol = r.id_rol " +
+            "WHERE r.nom_rol = 'Aprendiz' AND c.estado = TRUE");
     }
 
     public int countAprendicesInactivos() {
         return queryInt(
-            "SELECT COUNT(*) FROM aprendiz a " +
-            "INNER JOIN cuenta c ON a.num_doc = c.num_doc " +
-            "WHERE c.estado = FALSE");
+            "SELECT COUNT(*) FROM cuenta c " +
+            "INNER JOIN rol r ON c.id_rol = r.id_rol " +
+            "WHERE r.nom_rol = 'Aprendiz' AND c.estado = FALSE");
     }
 
     // ── Reportes ──────────────────────────────────────────────────────────────
@@ -84,9 +87,9 @@ public class DashboardDAO {
 
     public int countUsuariosBloqueadosAprendices() {
         return queryInt(
-            "SELECT COUNT(*) FROM aprendiz a " +
-            "INNER JOIN cuenta c ON a.num_doc = c.num_doc " +
-            "WHERE c.estado = FALSE");
+            "SELECT COUNT(*) FROM cuenta c " +
+            "INNER JOIN rol r ON c.id_rol = r.id_rol " +
+            "WHERE r.nom_rol = 'Aprendiz' AND c.estado = FALSE");
     }
 
     // ── Ingresos / Salidas hoy ────────────────────────────────────────────────

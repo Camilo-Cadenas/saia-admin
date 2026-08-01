@@ -21,12 +21,19 @@ public enum TipoReporte {
         "\uD83D\uDCCA",
         0x0D9488   // teal
     ),
-    ESCANEOS_QR(
-        "Escaneos QR",
-        "Detalle de escaneos por dispositivo",
-        "\uD83D\uDCF1",
-        0xEA580C   // naranja
-    ),
+    /* ══════════════════════════════════════════════════════════════════════════
+     * ESCANEOS QR - COMENTADO (No se usa en la nueva estructura)
+     * ══════════════════════════════════════════════════════════════════════════
+     * 
+     * ESCANEOS_QR(
+     *     "Escaneos QR",
+     *     "Detalle de escaneos por dispositivo",
+     *     "\uD83D\uDCF1",
+     *     0xEA580C   // naranja
+     * ),
+     *
+     * ══════════════════════════════════════════════════════════════════════════
+     */
     PERSONAL_SEGURIDAD(
         "Personal de seguridad",
         "Guardas y turnos registrados",
